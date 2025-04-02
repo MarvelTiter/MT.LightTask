@@ -385,23 +385,22 @@ public partial class CronExpression
         var parts = field.Split(',', StringSplitOptions.RemoveEmptyEntries);
         foreach (var p in parts)
         {
-            ParseFieldPart(ref store, p.AsSpan(), type, min, max);
+            ParseFieldPart(ref store, p, type, min, max);
         }
     }
 
     private void ParseFieldPart(ref CronPartial store, ReadOnlySpan<char> v, int type, int min, int max)
     {
-        Span<char> mutilValue = new char[3];
+        Span<char> mutilValue = stackalloc char[3];
         int posOffset = 0;
-        char c = ' ';
         int start = 0;
         int end = -1;
         bool useStep = false;
         bool useRange = false;
         for (int i = 0; i < v.Length; i++)
         {
-            c = v[i];
-            //处理MON和WEEK字符串
+            char c = v[i];
+            //处理一般字符,MON,WEEK,Number
             if (c is >= 'A' and <= 'Z' or >= '0' and <= '9')
             {
                 mutilValue[i - posOffset] = c;
@@ -570,13 +569,5 @@ file static class Ex
         if (array[0] == char.MinValue) return 0;
         if (array[2] >= 'A' && array[2] <= 'Z') return 1;
         return 2;
-    }
-
-    public static void Clear(this char[] array)
-    {
-        for (int i = 0; i < array.Length; i++)
-        {
-            array[i] = char.MinValue;
-        }
     }
 }

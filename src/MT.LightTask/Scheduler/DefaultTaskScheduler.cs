@@ -14,29 +14,13 @@ class DefaultTaskScheduler(string name) : ITaskScheduler
     public Exception? Exception { get; set; }
     public TaskRunStatus TaskStatus { get; set; }
     public TaskScheduleStatus ScheduleStatus { get; set; }
-    public void Start(ITask task, IScheduleStrategy strategy)
+
+    public void RunImmediately() => runner?.Run();
+
+    internal void InternalStart(ITask task, IScheduleStrategy strategy)
     {
         Task = task;
         Strategy = strategy;
-        InitTask();
-        Start();
-    }
-    public void Start()
-    {
-        schedulerTokenSource = new CancellationTokenSource();
-        runner?.Start(schedulerTokenSource.Token);
-        ScheduleStatus = TaskScheduleStatus.Running;
-    }
-
-    public void Stop()
-    {
-        schedulerTokenSource?.Cancel();
-        ScheduleStatus = TaskScheduleStatus.Ready;
-    }
-
-
-    private void InitTask()
-    {
         Log($"任务[{Name}]: 初始化");
         async Task work(CancellationToken token)
         {
@@ -58,37 +42,65 @@ class DefaultTaskScheduler(string name) : ITaskScheduler
         }
         runner = new SchedulerRunner(work, this);
         Log($"任务[{Name}]: 初始化完成");
+        Start();
+    }
+    public void Start()
+    {
+        if (ScheduleStatus == TaskScheduleStatus.Running)
+        {
+            Stop();
+        }
+        schedulerTokenSource = new CancellationTokenSource();
+        runner?.Start(schedulerTokenSource.Token);
+        ScheduleStatus = TaskScheduleStatus.Running;
     }
 
+    public void Stop()
+    {
+        schedulerTokenSource?.Cancel();
+        ScheduleStatus = TaskScheduleStatus.Ready;
+    }
 
     class SchedulerRunner(Func<CancellationToken, Task> work, DefaultTaskScheduler scheduler)
     {
         private CancellationToken schedulerCancelToken;
         private CancellationTokenSource? runnerTokenSource;
         private CancellationTokenSource? cancelTokenSource;
+        //用于取消等待，立即执行
+        private CancellationTokenSource? waitCancelTokenSource;
 
         public void Start(CancellationToken? cancellationToken)
         {
             schedulerCancelToken = cancellationToken ?? CancellationToken.None;
             runnerTokenSource = new CancellationTokenSource();
             cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(schedulerCancelToken, runnerTokenSource.Token);
+            waitCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelTokenSource.Token);
             System.Threading.Tasks.Task.Run(async () =>
             {
                 scheduler.Log($"任务[{scheduler.Name}]: 开始运行");
                 if (scheduler.Strategy.StartTime.HasValue)
                 {
-                    var wait = scheduler.Strategy.StartTime.Value - DateTime.Now;
+                    var wait = scheduler.Strategy.StartTime.Value - DateTimeOffset.Now;
                     if (wait > TimeSpan.Zero)
                     {
                         scheduler.Log($"任务[{scheduler.Name}]: 等待开始时间 , 耗时: {wait}");
-                        cancelTokenSource.Token.WaitHandle.WaitOne(wait);
+                        waitCancelTokenSource.Token.WaitHandle.WaitOne(wait);
                     }
                 }
                 while (!cancelTokenSource.IsCancellationRequested)
                 {
-                    if (!scheduler.Strategy.WaitForExecute(next => scheduler.Log($"任务[{scheduler.Name}] 下一次执行时间: {next}"),cancelTokenSource.Token)) break;
+                    if (!scheduler.Strategy.WaitForExecute(next => scheduler.Log($"任务[{scheduler.Name}] NextRuntime: {next}"), waitCancelTokenSource.Token))
+                    {
+                        if (waitCancelTokenSource.IsCancellationRequested)
+                        {
+                            waitCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelTokenSource.Token);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
 
-                    // 立刻运行一次
                     var sw = Stopwatch.StartNew();
                     await work(cancelTokenSource.Token).ConfigureAwait(false);
                     sw.Stop();
@@ -97,10 +109,7 @@ class DefaultTaskScheduler(string name) : ITaskScheduler
                 }
             });
         }
-
-        public void Stop()
-        {
-            runnerTokenSource?.Cancel();
-        }
+        public void Run() => waitCancelTokenSource?.Cancel();
+        public void Stop() => runnerTokenSource?.Cancel();
     }
 }

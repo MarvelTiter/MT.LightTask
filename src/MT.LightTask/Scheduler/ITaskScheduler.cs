@@ -9,9 +9,10 @@ public interface ITaskScheduler
     ITask? Task { get; set; }
     Exception? Exception { get; set; }
     IScheduleStrategy? Strategy { get; set; }
-    TaskRunStatus TaskStatus { get; set; }
-    TaskScheduleStatus ScheduleStatus { get; set; }
-    void Start(ITask task, IScheduleStrategy strategy);
+    TaskRunStatus TaskStatus { get; }
+    TaskScheduleStatus ScheduleStatus { get; }
+    //void Start(ITask task, IScheduleStrategy strategy);
+    void RunImmediately();
     void Start();
     void Stop();
 }

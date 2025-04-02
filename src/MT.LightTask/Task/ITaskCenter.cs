@@ -6,6 +6,7 @@ public interface ITaskCenter
     ITaskCenter AddTask(string name, ITask task, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder);
     //void Start(CancellationToken cancellationToken);
     IEnumerable<ITaskScheduler> TaskSchedulers();
+    ITaskScheduler? GetScheduler(string name);
     void Log(string message);
     bool Remove(string schedulerName);
     void Stop(CancellationToken cancellationToken);

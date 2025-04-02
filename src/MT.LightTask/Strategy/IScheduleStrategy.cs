@@ -37,9 +37,7 @@ public interface IScheduleStrategy
 
 public enum TaskRunStatus
 {
-    [Display(Name = "就绪")]
-    Ready,
-    [Display(Name = "运行")]
+    [Display(Name = "运行中")]
     Running,
     [Display(Name = "成功")]
     Success,
@@ -55,6 +53,8 @@ public enum TaskRunStatus
 
 public enum TaskScheduleStatus
 {
+    [Display(Name = "就绪")]
     Ready,
+    [Display(Name = "运行中")]
     Running,
 }

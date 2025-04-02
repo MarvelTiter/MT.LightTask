@@ -11,7 +11,6 @@ class TaskHost(ITaskCenter center) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        //center.Start(cancellationToken);
         return Task.CompletedTask;
     }
 

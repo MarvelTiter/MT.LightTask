@@ -2,7 +2,7 @@
 
 class DefaultScheduleStrategy : IScheduleStrategy
 {
-    public DateTimeOffset? StartTime { get; }
+    public DateTimeOffset? StartTime { get; set; }
 
     public DateTimeOffset? LastRuntime { get; set; }
 
@@ -17,8 +17,8 @@ class DefaultScheduleStrategy : IScheduleStrategy
         if (!LastRuntime.HasValue)
         {
             LastRuntime = DateTimeOffset.Now;
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 }
