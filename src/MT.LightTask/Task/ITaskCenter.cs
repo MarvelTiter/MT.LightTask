@@ -11,4 +11,13 @@ public interface ITaskCenter
     bool Remove(string schedulerName);
     void Stop(CancellationToken cancellationToken);
 
+    #region events
+    Action<ITaskScheduler>? OnError { get; set; }
+    Action<ITaskScheduler>? OnCompleted { get; set; }
+    Action<ITaskScheduler>? OnCompletedSuccessfully { get; set; }
+
+    Func<ITaskScheduler, Task>? OnErrorAsync { get; set; }
+    Func<ITaskScheduler, Task>? OnCompletedAsync { get; set; }
+    Func<ITaskScheduler, Task>? OnCompletedSuccessfullyAsync { get; set; }
+    #endregion
 }

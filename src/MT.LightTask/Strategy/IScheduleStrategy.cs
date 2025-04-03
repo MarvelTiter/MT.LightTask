@@ -32,7 +32,7 @@ public interface IScheduleStrategy
     /// 任务超时时间
     /// </summary>
     TimeSpan Timeout { get; }
-    bool WaitForExecute(Action<DateTimeOffset> handleNext, CancellationToken cancellationToken);
+    bool WaitForExecute(CancellationToken cancellationToken);
 }
 
 public enum TaskRunStatus

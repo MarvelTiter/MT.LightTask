@@ -10,9 +10,9 @@ class DefaultScheduleStrategy : IScheduleStrategy
 
     public TimeSpan LastRunElapsedTime { get; set; }
 
-    public TimeSpan Timeout { get; }
+    public TimeSpan Timeout { get => throw new NotImplementedException(); }
 
-    public virtual bool WaitForExecute(Action<DateTimeOffset> handleNext, CancellationToken cancellationToken)
+    public virtual bool WaitForExecute(CancellationToken cancellationToken)
     {
         if (!LastRuntime.HasValue)
         {
