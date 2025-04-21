@@ -17,6 +17,13 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
     public Exception? Exception { get; set; }
     public TaskRunStatus TaskStatus { get; set; }
     public TaskScheduleStatus ScheduleStatus { get; set; }
+    public bool CanRetry => Strategy?.RetryLimit > 0 && Strategy?.RetryTimes < Strategy?.RetryLimit;
+
+    private void UpdateTaskStatus(TaskRunStatus taskRunStatus)
+    {
+        TaskStatus = taskRunStatus;
+        Aop.NotifyTaskStatusChanged(this);
+    }
 
     public void RunImmediately() => runner?.Run();
 
@@ -30,38 +37,47 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
             Exception = null;
             try
             {
-                TaskStatus = TaskRunStatus.Running;
+                if (Strategy.RetryTimes > 0)
+                {
+                    UpdateTaskStatus(TaskRunStatus.Retry);
+                }
+                else
+                {
+                    UpdateTaskStatus(TaskRunStatus.Running);
+                }
                 var start = Stopwatch.GetTimestamp();
                 await Task.ExecuteAsync(token).ConfigureAwait(false);
                 Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
-                TaskStatus = TaskRunStatus.Success;
-                Aop.NotifyOnCompletedSuccessfully(this);
-                await Aop.NotifyOnCompletedSuccessfullyAsync(this);
+                //TaskStatus = TaskRunStatus.Success;
+                UpdateTaskStatus(TaskRunStatus.Success);
+                // reset
             }
             catch (TaskCanceledException)
             {
-                TaskStatus = TaskRunStatus.Canceled;
+                //TaskStatus = TaskRunStatus.Canceled;
+                UpdateTaskStatus(TaskRunStatus.Canceled);
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                TaskStatus = TaskRunStatus.OccurException;
-                Log($"任务[{Name}] 异常: {ex.Message}");
-                Aop.NotifyOnError(this);
-                await Aop.NotifyOnErrorAsync(this);
+                //TaskStatus = TaskRunStatus.OccurException;
+                UpdateTaskStatus(TaskRunStatus.OccurException);
+                Log($"任务[{Name}] 异常: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                if (CanRetry)
+                {
+                    Strategy.RetryTimes++;
+                }
             }
             finally
             {
-                Aop.NotifyOnCompleted(this);
-                await Aop.NotifyOnCompletedAsync(this);
-                //if (token.IsCancellationRequested) TaskStatus = TaskRunStatus.Canceled;
-                //if (Exception != null) TaskStatus = TaskRunStatus.OccurException;
+
             }
         }
         runner = new SchedulerRunner(work, this);
         Log($"任务[{Name}]: 初始化完成");
         Start();
     }
+
     public void Start()
     {
         if (ScheduleStatus == TaskScheduleStatus.Running)
@@ -72,13 +88,14 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         schedulerTokenSource = new CancellationTokenSource();
         runner?.Start(schedulerTokenSource.Token);
         ScheduleStatus = TaskScheduleStatus.Running;
-        TaskStatus = TaskRunStatus.Running;
+        Aop.NotifyTaskScheduleChanged(this);
     }
 
     public void Stop()
     {
         schedulerTokenSource?.Cancel();
         ScheduleStatus = TaskScheduleStatus.Ready;
+        Aop.NotifyTaskScheduleChanged(this);
     }
 
     protected virtual void Dispose(bool disposing)
@@ -133,7 +150,8 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
                 {
                     if (!scheduler.Strategy.WaitForExecute(waitCancelTokenSource.Token))
                     {
-                        if (waitCancelTokenSource.IsCancellationRequested)
+                        // 只有当waitCancelTokenSource取消时，才会立即执行，其他情况应该是break，结束任务
+                        if (waitCancelTokenSource.IsCancellationRequested && !cancelTokenSource.IsCancellationRequested)
                         {
                             scheduler.Log($"任务[{scheduler.Name}] 立即执行");
                             if (!waitCancelTokenSource.TryReset())
@@ -147,8 +165,27 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
                             break;
                         }
                     }
-
-                    await work(cancelTokenSource.Token).ConfigureAwait(false);
+                    // 重试处理
+                    if (scheduler.Strategy.RetryLimit > 0)
+                    {
+                        //do
+                        //{
+                        //    await work(cancelTokenSource.Token).ConfigureAwait(false);
+                        //}
+                        //while (scheduler.CanRetry && scheduler.TaskStatus == TaskRunStatus.OccurException);
+                        await work(cancelTokenSource.Token).ConfigureAwait(false);
+                        while (scheduler.CanRetry && scheduler.TaskStatus == TaskRunStatus.OccurException)
+                        {
+                            //scheduler.Strategy.RetryTimes++;
+                            scheduler.Log($"任务[{scheduler.Name}] 重试次数: {scheduler.Strategy.RetryTimes}");
+                            await work(cancelTokenSource.Token).ConfigureAwait(false);
+                        }
+                        scheduler.Strategy.RetryTimes = 0;
+                    }
+                    else
+                    {
+                        await work(cancelTokenSource.Token).ConfigureAwait(false);
+                    }
                     scheduler.Log($"任务[{scheduler.Name}] Elapsed: {scheduler.Strategy.LastRunElapsedTime} NextRuntime: {scheduler.Strategy.NextRuntime}");
                 }
             });

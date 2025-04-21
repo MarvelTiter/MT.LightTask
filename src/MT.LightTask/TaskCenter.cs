@@ -10,13 +10,9 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter, ITaskAo
     public IServiceProvider ServiceProvider { get; } = serviceProvider;
     private readonly ILogger<TaskCenter> logger = serviceProvider.GetRequiredService<ILogger<TaskCenter>>();
 
-    public Func<ITaskScheduler, Task>? OnErrorAsync { get; set; }
-    public Func<ITaskScheduler, Task>? OnCompletedAsync { get; set; }
-    public Func<ITaskScheduler, Task>? OnCompletedSuccessfullyAsync { get; set; }
 
-    public Action<ITaskScheduler>? OnError { get; set; }
-    public Action<ITaskScheduler>? OnCompleted { get; set; }
-    public Action<ITaskScheduler>? OnCompletedSuccessfully { get; set; }
+    public Action<ITaskScheduler>? OnTaskStatusChanged { get; set; }
+    public Action<ITaskScheduler>? OnTaskScheduleChanged { get; set; }
 
     public ITaskCenter AddTask(string name, ITask task, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder)
     {
@@ -63,11 +59,8 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter, ITaskAo
     }
 
     public void Log(string message) => logger.LogInformation("{message}", message);
-    public void NotifyOnError(ITaskScheduler scheduler) => OnError?.Invoke(scheduler);
-    public Task NotifyOnErrorAsync(ITaskScheduler scheduler) => OnErrorAsync?.Invoke(scheduler) ?? Task.CompletedTask;
-    public void NotifyOnCompleted(ITaskScheduler scheduler) => OnCompleted?.Invoke(scheduler);
-    public Task NotifyOnCompletedAsync(ITaskScheduler scheduler) => OnCompletedAsync?.Invoke(scheduler) ?? Task.CompletedTask;
-    public void NotifyOnCompletedSuccessfully(ITaskScheduler scheduler) => OnCompletedSuccessfully?.Invoke(scheduler);
-    public Task NotifyOnCompletedSuccessfullyAsync(ITaskScheduler scheduler) => OnCompletedSuccessfullyAsync?.Invoke(scheduler) ?? Task.CompletedTask;
+    public void NotifyTaskStatusChanged(ITaskScheduler scheduler) => OnTaskStatusChanged?.Invoke(scheduler);
+    public void NotifyTaskScheduleChanged(ITaskScheduler scheduler) => OnTaskScheduleChanged?.Invoke(scheduler);
+
 
 }

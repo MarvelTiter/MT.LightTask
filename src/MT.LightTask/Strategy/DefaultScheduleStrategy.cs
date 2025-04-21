@@ -11,6 +11,8 @@ class DefaultScheduleStrategy : IScheduleStrategy
     public TimeSpan LastRunElapsedTime { get; set; }
 
     public TimeSpan Timeout { get => throw new NotImplementedException(); }
+    public int RetryLimit { get; set; }
+    public int RetryTimes { get; set; }
 
     public virtual bool WaitForExecute(CancellationToken cancellationToken)
     {

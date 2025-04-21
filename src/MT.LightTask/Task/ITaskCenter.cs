@@ -12,12 +12,17 @@ public interface ITaskCenter
     void Stop(CancellationToken cancellationToken);
 
     #region events
-    Action<ITaskScheduler>? OnError { get; set; }
-    Action<ITaskScheduler>? OnCompleted { get; set; }
-    Action<ITaskScheduler>? OnCompletedSuccessfully { get; set; }
+    //Action<ITaskScheduler>? OnError { get; set; }
+    //Action<ITaskScheduler>? OnCompleted { get; set; }
+    //Action<ITaskScheduler>? OnCompletedSuccessfully { get; set; }
 
-    Func<ITaskScheduler, Task>? OnErrorAsync { get; set; }
-    Func<ITaskScheduler, Task>? OnCompletedAsync { get; set; }
-    Func<ITaskScheduler, Task>? OnCompletedSuccessfullyAsync { get; set; }
+    //Func<ITaskScheduler, Task>? OnErrorAsync { get; set; }
+    //Func<ITaskScheduler, Task>? OnCompletedAsync { get; set; }
+    //Func<ITaskScheduler, Task>? OnCompletedSuccessfullyAsync { get; set; }
+
+    Action<ITaskScheduler>? OnTaskStatusChanged { get; set; }
+    Action<ITaskScheduler>? OnTaskScheduleChanged { get; set; }
+    //Func<ITaskScheduler, Task>? OnTaskStatusChangedAsync { get; set; }
+
     #endregion
 }

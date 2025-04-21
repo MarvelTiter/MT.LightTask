@@ -32,13 +32,25 @@ public interface IScheduleStrategy
     /// 任务超时时间
     /// </summary>
     TimeSpan Timeout { get; }
+    /// <summary>
+    /// 重试次数限制，0表示不重试
+    /// </summary>
+    int RetryLimit { get; set; }
+    /// <summary>
+    /// 重试次数
+    /// </summary>
+    int RetryTimes { get; internal set; }
     bool WaitForExecute(CancellationToken cancellationToken);
 }
 
 public enum TaskRunStatus
 {
+    [Display(Name = "等待中")]
+    Waiting,
     [Display(Name = "运行中")]
     Running,
+    [Display(Name = "重试")]
+    Retry,
     [Display(Name = "成功")]
     Success,
     [Display(Name = "超时")]

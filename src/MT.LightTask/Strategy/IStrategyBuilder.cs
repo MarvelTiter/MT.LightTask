@@ -2,6 +2,8 @@
 
 public interface IStrategyBuilder
 {
-    IScheduleStrategy Once(DateTimeOffset startTime);
-    IScheduleStrategy WithCron(string cron);
+    IStrategyBuilder Once(DateTimeOffset startTime);
+    IStrategyBuilder WithCron(string cron);
+    IStrategyBuilder WithRetry(int times);
+    IScheduleStrategy Build();
 }
