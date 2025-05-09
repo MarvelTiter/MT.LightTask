@@ -1,5 +1,4 @@
-﻿
-namespace MT.LightTask;
+﻿namespace MT.LightTask;
 
 class StrategyBuilder : IStrategyBuilder
 {
@@ -7,12 +6,14 @@ class StrategyBuilder : IStrategyBuilder
     DateTimeOffset? start;
     string? cron;
     int retry = 0;
+
     public IScheduleStrategy Build()
     {
         return type switch
         {
             1 => new DefaultScheduleStrategy() { StartTime = start, RetryLimit = retry },
             2 => new CronScheduleStrategy(cron!) { RetryLimit = retry },
+            3 => new SignalScheduleStrategy() { RetryLimit = retry },
             _ => throw new ArgumentException()
         };
     }
@@ -28,6 +29,12 @@ class StrategyBuilder : IStrategyBuilder
     {
         type = 2;
         this.cron = cron;
+        return this;
+    }
+
+    public IStrategyBuilder WithSignal()
+    {
+        type = 3;
         return this;
     }
 

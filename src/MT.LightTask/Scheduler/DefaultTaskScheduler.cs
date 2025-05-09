@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MT.LightTask;
 
-class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
+internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
 {
     private SchedulerRunner? runner;
     private CancellationTokenSource? schedulerTokenSource;
@@ -25,26 +25,27 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         Aop.NotifyTaskStatusChanged(this);
     }
 
-    public void RunImmediately() => runner?.Run();
+    public bool RunImmediately()
+    {
+        if (ScheduleStatus != TaskScheduleStatus.Running)
+            return false;
+        if (TaskStatus == TaskRunStatus.Running)
+            return false;
+        return runner?.Run() ?? false;
+    }
 
     internal void InternalStart(ITask task, IScheduleStrategy strategy)
     {
         Task = task;
         Strategy = strategy;
         Log($"任务[{Name}]: 初始化");
+
         async Task work(CancellationToken token)
         {
             Exception = null;
             try
             {
-                if (Strategy.RetryTimes > 0)
-                {
-                    UpdateTaskStatus(TaskRunStatus.Retry);
-                }
-                else
-                {
-                    UpdateTaskStatus(TaskRunStatus.Running);
-                }
+                UpdateTaskStatus(Strategy.RetryTimes > 0 ? TaskRunStatus.Retry : TaskRunStatus.Running);
                 var start = Stopwatch.GetTimestamp();
                 await Task.ExecuteAsync(token).ConfigureAwait(false);
                 Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
@@ -70,9 +71,9 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
             }
             finally
             {
-
             }
         }
+
         runner = new SchedulerRunner(work, this);
         Log($"任务[{Name}]: 初始化完成");
         Start();
@@ -84,6 +85,7 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         {
             Stop();
         }
+
         schedulerTokenSource?.Dispose();
         schedulerTokenSource = new CancellationTokenSource();
         runner?.Start(schedulerTokenSource.Token);
@@ -119,11 +121,13 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    class SchedulerRunner(Func<CancellationToken, Task> work, DefaultTaskScheduler scheduler) : IDisposable
+    private class SchedulerRunner(Func<CancellationToken, Task> work, DefaultTaskScheduler scheduler) : IDisposable
     {
         private CancellationToken schedulerCancelToken;
         private CancellationTokenSource? runnerTokenSource;
+
         private CancellationTokenSource? cancelTokenSource;
+
         //用于取消等待，立即执行
         private CancellationTokenSource? waitCancelTokenSource;
         private bool disposedValue;
@@ -146,6 +150,7 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
                         waitCancelTokenSource.Token.WaitHandle.WaitOne(wait);
                     }
                 }
+
                 while (!cancelTokenSource.IsCancellationRequested)
                 {
                     if (!scheduler.Strategy.WaitForExecute(waitCancelTokenSource.Token))
@@ -165,6 +170,7 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
                             break;
                         }
                     }
+
                     // 重试处理
                     if (scheduler.Strategy.RetryLimit > 0)
                     {
@@ -180,20 +186,31 @@ class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
                             scheduler.Log($"任务[{scheduler.Name}] 重试次数: {scheduler.Strategy.RetryTimes}");
                             await work(cancelTokenSource.Token).ConfigureAwait(false);
                         }
+
                         scheduler.Strategy.RetryTimes = 0;
                     }
                     else
                     {
                         await work(cancelTokenSource.Token).ConfigureAwait(false);
                     }
+
                     scheduler.Log($"任务[{scheduler.Name}] Elapsed: {scheduler.Strategy.LastRunElapsedTime} NextRuntime: {scheduler.Strategy.NextRuntime}");
                 }
             });
         }
-        public void Run() => waitCancelTokenSource?.Cancel();
-        public void Stop() => runnerTokenSource?.Cancel();
 
-        protected virtual void Dispose(bool disposing)
+        public bool Run()
+        {
+            // 已经取消等待了，不执行
+            if (waitCancelTokenSource?.IsCancellationRequested == true) 
+                return false;
+            waitCancelTokenSource?.Cancel();
+            return true;
+        }
+
+        private void Stop() => runnerTokenSource?.Cancel();
+
+        private void Dispose(bool disposing)
         {
             if (!disposedValue)
             {

@@ -1,6 +1,6 @@
 ﻿namespace MT.LightTask;
 
-class CronScheduleStrategy(string cron) : DefaultScheduleStrategy
+internal class CronScheduleStrategy(string cron) : DefaultScheduleStrategy
 {
     private readonly CronExpression Cron = CronExpression.Parse(cron);
 
