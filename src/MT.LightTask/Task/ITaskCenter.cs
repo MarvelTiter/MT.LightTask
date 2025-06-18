@@ -1,5 +1,16 @@
 ﻿namespace MT.LightTask;
 
+public readonly struct TaskEventArgs(ITaskScheduler task, ITaskCenter center)
+{
+    public ITaskScheduler Task { get; } = task;
+    public ITaskCenter Center { get; } = center;
+
+    public void RemoveFromCenter()
+    {
+        Center.Remove(Task.Name);
+    }
+}
+
 public interface ITaskCenter
 {
     IServiceProvider ServiceProvider { get; }
@@ -13,15 +24,16 @@ public interface ITaskCenter
 
     #region events
     //Action<ITaskScheduler>? OnError { get; set; }
-    //Action<ITaskScheduler>? OnCompleted { get; set; }
     //Action<ITaskScheduler>? OnCompletedSuccessfully { get; set; }
 
     //Func<ITaskScheduler, Task>? OnErrorAsync { get; set; }
     //Func<ITaskScheduler, Task>? OnCompletedAsync { get; set; }
     //Func<ITaskScheduler, Task>? OnCompletedSuccessfullyAsync { get; set; }
 
-    Action<ITaskScheduler>? OnTaskStatusChanged { get; set; }
-    Action<ITaskScheduler>? OnTaskScheduleChanged { get; set; }
+    event Action<TaskEventArgs>? OnTaskStatusChanged;
+    event Action<TaskEventArgs>? OnTaskScheduleChanged;
+    event Action<TaskEventArgs>? OnCompleted;
+
     //Func<ITaskScheduler, Task>? OnTaskStatusChangedAsync { get; set; }
 
     #endregion

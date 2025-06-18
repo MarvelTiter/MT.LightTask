@@ -7,7 +7,7 @@
 		<NoWarn>IDE0130</NoWarn>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Authors>MarvelTiter</Authors>
-		<Version>0.0.5</Version>
+		<Version>0.0.6</Version>
 		<Title>MT.LightTask</Title>
 		<PackageProjectUrl>https://github.com/MarvelTiter/MT.LightTask</PackageProjectUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>

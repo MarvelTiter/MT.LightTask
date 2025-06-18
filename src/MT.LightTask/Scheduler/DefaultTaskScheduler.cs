@@ -71,6 +71,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
             }
             finally
             {
+                Aop.NotifyTaskCompleted(this);
             }
         }
 

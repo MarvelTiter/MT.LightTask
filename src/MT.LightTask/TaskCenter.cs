@@ -11,8 +11,9 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter, ITaskAo
     private readonly ILogger<TaskCenter> logger = serviceProvider.GetRequiredService<ILogger<TaskCenter>>();
 
 
-    public Action<ITaskScheduler>? OnTaskStatusChanged { get; set; }
-    public Action<ITaskScheduler>? OnTaskScheduleChanged { get; set; }
+    public event Action<TaskEventArgs>? OnTaskStatusChanged;
+    public event Action<TaskEventArgs>? OnTaskScheduleChanged;
+    public event Action<TaskEventArgs>? OnCompleted;
 
     public ITaskCenter AddTask(string name, ITask task, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder)
     {
@@ -59,8 +60,8 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter, ITaskAo
     }
 
     public void Log(string message) => logger.LogInformation("{message}", message);
-    public void NotifyTaskStatusChanged(ITaskScheduler scheduler) => OnTaskStatusChanged?.Invoke(scheduler);
-    public void NotifyTaskScheduleChanged(ITaskScheduler scheduler) => OnTaskScheduleChanged?.Invoke(scheduler);
+    public void NotifyTaskStatusChanged(ITaskScheduler scheduler) => OnTaskStatusChanged?.Invoke(new(scheduler, this));
+    public void NotifyTaskScheduleChanged(ITaskScheduler scheduler) => OnTaskScheduleChanged?.Invoke(new(scheduler, this));
 
-
+    public void NotifyTaskCompleted(ITaskScheduler scheduler) => OnCompleted?.Invoke(new(scheduler, this));
 }
