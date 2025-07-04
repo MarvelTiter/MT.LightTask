@@ -4,6 +4,11 @@ namespace MT.LightTask;
 
 public static class TaskCenterExtensions
 {
+    public static ITaskCenter AddTask<T>(this ITaskCenter center, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder) where T : ITask
+    {
+        var name = typeof(T).Name;
+        return center.AddTask<T>(name, strategyBuilder);
+    }
     public static ITaskCenter AddTask<T>(this ITaskCenter center, string name, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder) where T : ITask
     {
         var task = center.ServiceProvider.GetRequiredService<T>();
