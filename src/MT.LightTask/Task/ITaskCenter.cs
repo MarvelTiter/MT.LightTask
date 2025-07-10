@@ -2,12 +2,12 @@
 
 public readonly struct TaskEventArgs(ITaskScheduler task, ITaskCenter center)
 {
-    public ITaskScheduler Task { get; } = task;
+    public ITaskScheduler Scheduler { get; } = task;
     public ITaskCenter Center { get; } = center;
 
     public void RemoveFromCenter()
     {
-        Center.Remove(Task.Name);
+        Center.Remove(Scheduler.Name);
     }
 }
 
