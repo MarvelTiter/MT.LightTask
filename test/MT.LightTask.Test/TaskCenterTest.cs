@@ -52,7 +52,7 @@ public sealed class TaskCenterTest
         var provider = services.BuildServiceProvider();
         var tc = provider.GetRequiredService<ITaskCenter>();
         var now = DateTimeOffset.Now;
-        tc.AddTask<TestTask>("测试", b => b.WithCron("*/5 * * * * ?").Build());
+        tc.AddTask<TestTask>("测试", b => b.WithCron("* * */6 * * ?").Build());
         var scheduler = tc.GetScheduler("测试");
         scheduler?.RunImmediately();
         await Task.Delay(TimeSpan.FromSeconds(32));

@@ -16,11 +16,19 @@ class DefaultScheduleStrategy : IScheduleStrategy
 
     public virtual bool WaitForExecute(CancellationToken cancellationToken)
     {
-        if (!LastRuntime.HasValue)
+        // 如果有上次运行时间，说明已经执行过了
+        if (LastRuntime.HasValue)
         {
-            LastRuntime = DateTimeOffset.Now;
-            return true;
+            return false;
         }
-        return false;
+        if (StartTime.HasValue)
+        {
+            NextRuntime = StartTime.Value;
+        }
+        var wait = StartTime.HasValue ? StartTime.Value - DateTimeOffset.Now : TimeSpan.Zero;
+        var reciveCancelSignal = cancellationToken.WaitHandle.WaitOne(wait);
+        LastRuntime = DateTimeOffset.Now;
+        NextRuntime = null;
+        return !reciveCancelSignal;
     }
 }
