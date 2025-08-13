@@ -26,9 +26,32 @@ class DefaultScheduleStrategy : IScheduleStrategy
             NextRuntime = StartTime.Value;
         }
         var wait = StartTime.HasValue ? StartTime.Value - DateTimeOffset.Now : TimeSpan.Zero;
-        var reciveCancelSignal = cancellationToken.WaitHandle.WaitOne(wait);
+        //var reciveCancelSignal = cancellationToken.WaitHandle.WaitOne(wait);
+        var reciveCancelSignal = Wait(wait, cancellationToken);
         LastRuntime = DateTimeOffset.Now;
         NextRuntime = null;
         return !reciveCancelSignal;
+    }
+
+    protected static readonly TimeSpan MAX_WAIT_TIMESPAN = TimeSpan.FromMilliseconds(int.MaxValue - 1);
+    protected static bool Wait(TimeSpan timeout, CancellationToken token)
+    {
+        if (timeout <= MAX_WAIT_TIMESPAN)
+        {
+            return token.WaitHandle.WaitOne(timeout);
+        }
+        else
+        {
+            while (timeout > MAX_WAIT_TIMESPAN)
+            {
+                var access = token.WaitHandle.WaitOne(MAX_WAIT_TIMESPAN);
+                if (access)
+                {
+                    return true;
+                }
+                timeout -= MAX_WAIT_TIMESPAN;
+            }
+            return token.WaitHandle.WaitOne(timeout);
+        }
     }
 }

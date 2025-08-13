@@ -35,6 +35,9 @@ public interface ITaskCenter
     event Action<TaskEventArgs>? OnCompleted;
 
     //Func<ITaskScheduler, Task>? OnTaskStatusChangedAsync { get; set; }
+    IDisposable RegisterTaskStatusChangedHandler(Func<TaskEventArgs, Task> handler);
+    IDisposable RegisterTaskScheduleChangedHandler(Func<TaskEventArgs, Task> handler);
+    IDisposable RegisterTaskCompletedHandler(Func<TaskEventArgs, Task> handler);
 
     #endregion
 }

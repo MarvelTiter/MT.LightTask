@@ -13,16 +13,17 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
     [NotNull] public IScheduleStrategy? Strategy { get; set; }
     [NotNull] public ITask? Task { get; set; }
     [NotNull] public Action<string>? Log { get; set; }
-    [NotNull] public ITaskAopNotify? Aop { get; set; }
+    [NotNull] public TaskCenter? Aop { get; set; }
     public Exception? Exception { get; set; }
     public TaskRunStatus TaskStatus { get; set; }
     public TaskScheduleStatus ScheduleStatus { get; set; }
     public bool CanRetry => Strategy?.RetryLimit > 0 && Strategy?.RetryTimes < Strategy?.RetryLimit;
 
-    private void UpdateTaskStatus(TaskRunStatus taskRunStatus)
+    private Task UpdateTaskStatusAsync(TaskRunStatus taskRunStatus)
     {
         TaskStatus = taskRunStatus;
         Aop.NotifyTaskStatusChanged(this);
+        return Aop.NotifyTaskStatusChangedAsync(this);
     }
 
     public bool RunImmediately()
@@ -45,24 +46,24 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
             Exception = null;
             try
             {
-                UpdateTaskStatus(Strategy.RetryTimes > 0 ? TaskRunStatus.Retry : TaskRunStatus.Running);
+                await UpdateTaskStatusAsync(Strategy.RetryTimes > 0 ? TaskRunStatus.Retry : TaskRunStatus.Running);
                 var start = Stopwatch.GetTimestamp();
                 await Task.ExecuteAsync(token).ConfigureAwait(false);
                 Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
                 //TaskStatus = TaskRunStatus.Success;
-                UpdateTaskStatus(TaskRunStatus.Success);
+                await UpdateTaskStatusAsync(TaskRunStatus.Success);
                 // reset
             }
             catch (TaskCanceledException)
             {
                 //TaskStatus = TaskRunStatus.Canceled;
-                UpdateTaskStatus(TaskRunStatus.Canceled);
+                await UpdateTaskStatusAsync(TaskRunStatus.Canceled);
             }
             catch (Exception ex)
             {
                 Exception = ex;
                 //TaskStatus = TaskRunStatus.OccurException;
-                UpdateTaskStatus(TaskRunStatus.OccurException);
+                await UpdateTaskStatusAsync(TaskRunStatus.OccurException);
                 Log($"任务[{Name}] 异常: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 if (CanRetry)
                 {
@@ -72,6 +73,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
             finally
             {
                 Aop.NotifyTaskCompleted(this);
+                await Aop.NotifyTaskCompletedAsync(this);
             }
         }
 
@@ -92,6 +94,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         runner?.Start(schedulerTokenSource.Token);
         ScheduleStatus = TaskScheduleStatus.Running;
         Aop.NotifyTaskScheduleChanged(this);
+        _ = Aop.NotifyTaskScheduleChangedAsync(this);
     }
 
     public void Stop()
@@ -99,6 +102,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         schedulerTokenSource?.Cancel();
         ScheduleStatus = TaskScheduleStatus.Ready;
         Aop.NotifyTaskScheduleChanged(this);
+        _ = Aop.NotifyTaskScheduleChangedAsync(this);
     }
 
     protected virtual void Dispose(bool disposing)
@@ -203,7 +207,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         public bool Run()
         {
             // 已经取消等待了，不执行
-            if (waitCancelTokenSource?.IsCancellationRequested == true) 
+            if (waitCancelTokenSource?.IsCancellationRequested == true)
                 return false;
             waitCancelTokenSource?.Cancel();
             return true;

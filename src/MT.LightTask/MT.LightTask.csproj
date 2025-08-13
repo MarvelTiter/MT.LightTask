@@ -7,14 +7,13 @@
 		<NoWarn>IDE0130</NoWarn>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Authors>MarvelTiter</Authors>
-		<Version>0.0.8</Version>
 		<Title>MT.LightTask</Title>
 		<PackageProjectUrl>https://github.com/MarvelTiter/MT.LightTask</PackageProjectUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
-
+	<Import Project="Versions.props" />
 	<ItemGroup>
 	  <None Include="..\..\README.md">
 	    <Pack>True</Pack>

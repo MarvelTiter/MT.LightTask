@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
 namespace MT.LightTask;
-public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter, ITaskAopNotify
+public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITaskAopNotify
 {
     private readonly ConcurrentDictionary<string, DefaultTaskScheduler> tasks = [];
 
@@ -64,4 +64,25 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter, ITaskAo
     public void NotifyTaskScheduleChanged(ITaskScheduler scheduler) => OnTaskScheduleChanged?.Invoke(new(scheduler, this));
 
     public void NotifyTaskCompleted(ITaskScheduler scheduler) => OnCompleted?.Invoke(new(scheduler, this));
+
+
+    private readonly AsyncHandlerManager<TaskEventArgs> taskStatusChanged = new();
+    private readonly AsyncHandlerManager<TaskEventArgs> taskScheduleChanged = new();
+    private readonly AsyncHandlerManager<TaskEventArgs> taskCompleted = new();
+
+    public IDisposable RegisterTaskStatusChangedHandler(Func<TaskEventArgs, Task> handler)
+        => taskStatusChanged.RegisterHandler(handler);
+
+    public IDisposable RegisterTaskScheduleChangedHandler(Func<TaskEventArgs, Task> handler)
+        => taskScheduleChanged.RegisterHandler(handler);
+
+    public IDisposable RegisterTaskCompletedHandler(Func<TaskEventArgs, Task> handler)
+        => taskCompleted.RegisterHandler(handler);
+
+    public Task NotifyTaskStatusChangedAsync(ITaskScheduler scheduler)
+       => taskStatusChanged.NotifyInvokeHandlers(new(scheduler, this));
+    public Task NotifyTaskScheduleChangedAsync(ITaskScheduler scheduler)
+        => taskScheduleChanged.NotifyInvokeHandlers(new(scheduler, this));
+    public Task NotifyTaskCompletedAsync(ITaskScheduler scheduler)
+        => taskCompleted.NotifyInvokeHandlers(new(scheduler, this));
 }
