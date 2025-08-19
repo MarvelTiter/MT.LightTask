@@ -1,4 +1,6 @@
-﻿namespace MT.LightTask;
+﻿using System.Diagnostics;
+
+namespace MT.LightTask;
 
 class DefaultScheduleStrategy : IScheduleStrategy
 {
@@ -36,6 +38,11 @@ class DefaultScheduleStrategy : IScheduleStrategy
     protected static readonly TimeSpan MAX_WAIT_TIMESPAN = TimeSpan.FromMilliseconds(int.MaxValue - 1);
     protected static bool Wait(TimeSpan timeout, CancellationToken token)
     {
+        if (timeout < TimeSpan.Zero)
+        {
+            timeout = TimeSpan.Zero;
+        }
+        Debug.WriteLine($"等待时间: {timeout}");
         if (timeout <= MAX_WAIT_TIMESPAN)
         {
             return token.WaitHandle.WaitOne(timeout);

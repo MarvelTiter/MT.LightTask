@@ -61,4 +61,21 @@ public sealed class TaskCenterTest
         var context = provider.GetRequiredService<TestContext>();
         Assert.IsTrue(context.Value == 100);
     }
+
+    [TestMethod]
+    public async Task OnceTaskTest()
+    {
+        var services = new ServiceCollection();
+        services.AddLightTask();
+        services.AddScoped<TestContext>();
+        services.AddScoped<TestTask>();
+        services.AddLogging();
+        var provider = services.BuildServiceProvider();
+        var tc = provider.GetRequiredService<ITaskCenter>();
+        var now = DateTimeOffset.Now;
+        tc.AddTask<TestTask>("测试", b => b.Once(now.AddSeconds(2)).Build());
+        await Task.Delay(TimeSpan.FromSeconds(5));
+        var context = provider.GetRequiredService<TestContext>();
+        Assert.IsTrue(context.Value == 100);
+    }
 }

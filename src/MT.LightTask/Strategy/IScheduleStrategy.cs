@@ -7,10 +7,10 @@ namespace MT.LightTask;
 /// </summary>
 public interface IScheduleStrategy
 {
-    /// <summary>
-    /// 任务开始时间
-    /// </summary>
-    DateTimeOffset? StartTime { get; }
+    ///// <summary>
+    ///// 任务开始时间
+    ///// </summary>
+    //DateTimeOffset? StartTime { get; }
 
     /// <summary>
     /// 上次任务执行时间

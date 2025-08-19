@@ -146,15 +146,15 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
             System.Threading.Tasks.Task.Run(async () =>
             {
                 scheduler.Log($"任务[{scheduler.Name}]: 开始运行");
-                if (scheduler.Strategy.StartTime.HasValue)
-                {
-                    var wait = scheduler.Strategy.StartTime.Value - DateTimeOffset.Now;
-                    if (wait > TimeSpan.Zero)
-                    {
-                        scheduler.Log($"任务[{scheduler.Name}]: 等待开始时间 => {wait}");
-                        waitCancelTokenSource.Token.WaitHandle.WaitOne(wait);
-                    }
-                }
+                //if (scheduler.Strategy.StartTime.HasValue)
+                //{
+                //    var wait = scheduler.Strategy.StartTime.Value - DateTimeOffset.Now;
+                //    if (wait > TimeSpan.Zero)
+                //    {
+                //        scheduler.Log($"任务[{scheduler.Name}]: 等待开始时间 => {wait}");
+                //        waitCancelTokenSource.Token.WaitHandle.WaitOne(wait);
+                //    }
+                //}
 
                 while (!cancelTokenSource.IsCancellationRequested)
                 {
