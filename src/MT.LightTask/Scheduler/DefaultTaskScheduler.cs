@@ -3,6 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MT.LightTask;
 
+internal static class TaskSchedulerExtensions
+{
+    public static bool IsRunning(this DefaultTaskScheduler defaultSchedule)
+    {
+        return defaultSchedule.ScheduleStatus == TaskScheduleStatus.Running;
+    }
+}
+
 internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
 {
     private SchedulerRunner? runner;
@@ -17,7 +25,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
     public Exception? Exception { get; set; }
     public TaskRunStatus TaskStatus { get; set; }
     public TaskScheduleStatus ScheduleStatus { get; set; }
-    public bool CanRetry => Strategy?.RetryLimit > 0 && Strategy?.RetryTimes < Strategy?.RetryLimit;
+    public bool CanRetry => Strategy.RetryLimit > 0 && Strategy.RetryTimes < Strategy.RetryLimit;
 
     private Task UpdateTaskStatusAsync(TaskRunStatus taskRunStatus)
     {
@@ -190,6 +198,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
                             //scheduler.Strategy.RetryTimes++;
                             scheduler.Log($"任务[{scheduler.Name}] 重试次数: {scheduler.Strategy.RetryTimes}");
                             await work(cancelTokenSource.Token).ConfigureAwait(false);
+                            await DelayRetry(scheduler.Strategy);
                         }
 
                         scheduler.Strategy.RetryTimes = 0;
@@ -237,6 +246,22 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
             // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        private static Task DelayRetry(IScheduleStrategy strategy)
+        {
+            if (strategy.WaitDurationProvider is not null)
+            {
+                var delay = strategy.WaitDurationProvider.Invoke(strategy.RetryTimes);
+                return System.Threading.Tasks.Task.Delay(delay);
+            }
+            else
+            {
+                // 指数退避策略：1s, 2s, 4s, 8s...
+                var times = Math.Pow(2, strategy.RetryTimes);
+                var delay = TimeSpan.FromMilliseconds(strategy.RetryIntervalBase * times);
+                return System.Threading.Tasks.Task.Delay(delay);
+            }
         }
     }
 }

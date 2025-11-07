@@ -15,6 +15,8 @@ class DefaultScheduleStrategy : IScheduleStrategy
     public TimeSpan Timeout { get => throw new NotImplementedException(); }
     public int RetryLimit { get; set; }
     public int RetryTimes { get; set; }
+    public int RetryIntervalBase { get; set; }
+    public Func<int, TimeSpan>? WaitDurationProvider { get; set; }
 
     public virtual bool WaitForExecute(CancellationToken cancellationToken)
     {

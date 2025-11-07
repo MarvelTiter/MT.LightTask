@@ -10,7 +10,6 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITask
     public IServiceProvider ServiceProvider { get; } = serviceProvider;
     private readonly ILogger<TaskCenter> logger = serviceProvider.GetRequiredService<ILogger<TaskCenter>>();
 
-
     public event Action<TaskEventArgs>? OnTaskStatusChanged;
     public event Action<TaskEventArgs>? OnTaskScheduleChanged;
     public event Action<TaskEventArgs>? OnCompleted;
@@ -26,6 +25,9 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITask
              };
              return scheduler;
          });
+        //if (!scheduler.IsRunning())
+        //{
+        //}
         var b = new StrategyBuilder();
         var strategy = strategyBuilder.Invoke(b);
         scheduler.InternalStart(task, strategy);

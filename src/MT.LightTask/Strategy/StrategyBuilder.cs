@@ -7,14 +7,36 @@ class StrategyBuilder : IStrategyBuilder
     string? cron;
     int retry = 0;
     TimeSpan? interval;
+    int baseInterval;
+    Func<int, TimeSpan>? durationProvider;
     public IScheduleStrategy Build()
     {
         return type switch
         {
-            1 => new DefaultScheduleStrategy() { StartTime = start, RetryLimit = retry },
-            2 => new CronScheduleStrategy(cron!) { RetryLimit = retry },
-            3 => new SignalScheduleStrategy() { RetryLimit = retry },
-            4 => new IntervalScheduleStrategy(interval!.Value),
+            1 => new DefaultScheduleStrategy()
+            {
+                StartTime = start,
+                RetryLimit = retry,
+                WaitDurationProvider = durationProvider,
+                RetryIntervalBase = baseInterval
+            },
+            2 => new CronScheduleStrategy(cron!)
+            {
+                RetryLimit = retry,
+                WaitDurationProvider = durationProvider,
+                RetryIntervalBase = baseInterval
+            },
+            3 => new SignalScheduleStrategy()
+            {
+                RetryLimit = retry,
+                WaitDurationProvider = durationProvider,
+                RetryIntervalBase = baseInterval
+            },
+            4 => new IntervalScheduleStrategy(interval!.Value)
+            {
+                WaitDurationProvider = durationProvider,
+                RetryIntervalBase = baseInterval
+            },
             _ => throw new ArgumentException()
         };
     }
@@ -39,9 +61,17 @@ class StrategyBuilder : IStrategyBuilder
         return this;
     }
 
-    public IStrategyBuilder WithRetry(int times)
+    public IStrategyBuilder WithRetry(int times, int baseInterval = 1000)
     {
         retry = times;
+        this.baseInterval = baseInterval;
+        return this;
+    }
+
+    public IStrategyBuilder WithRetry(int times, Func<int, TimeSpan> durationProvider)
+    {
+        retry = times;
+        this.durationProvider = durationProvider;
         return this;
     }
 

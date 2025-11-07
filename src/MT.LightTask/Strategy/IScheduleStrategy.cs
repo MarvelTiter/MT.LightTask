@@ -37,6 +37,24 @@ public interface IScheduleStrategy
     /// </summary>
     int RetryLimit { get; set; }
     /// <summary>
+    /// 重试间隔基准间隔(单位ms)
+    /// <para>
+    /// 默认为1000
+    /// </para>
+    /// <para>
+    /// 第一次重试间隔: 1 * 1000
+    /// </para>
+    /// <para>
+    /// 第二次重试间隔: 2 * 1000
+    /// </para>
+    /// <para>
+    /// 第三次重试间隔: 4 * 1000
+    /// </para>
+    /// 依此类推
+    /// </summary>
+    int RetryIntervalBase { get; set; }
+    Func<int, TimeSpan>? WaitDurationProvider { get; set; }
+    /// <summary>
     /// 重试次数
     /// </summary>
     int RetryTimes { get; internal set; }

@@ -116,6 +116,7 @@ public partial class CronExpression
     private CronPartial month;
     private CronPartial dayOfWeek;
 
+
     public DateTimeOffset GetNextOccurrence(DateTimeOffset? after = null)
     {
         // 从下一秒开始检查
@@ -395,6 +396,7 @@ public partial class CronExpression
         int posOffset = 0;
         int start = 0;
         int end = -1;
+        int step = 1;
         bool useStep = false;
         bool useRange = false;
         for (int i = 0; i < v.Length; i++)
@@ -443,27 +445,38 @@ public partial class CronExpression
                 posOffset = i + 1;
                 useStep = true;
                 store.ALL_SPEC = false;
-                HandleStringMap(mutilValue, type, ref start);
+                if (useRange)
+                {
+                    HandleStringMap(mutilValue, type, ref end);
+                }
+                else
+                {
+                    HandleStringMap(mutilValue, type, ref start);
+                }
                 mutilValue.Clear();
             }
         }
 
-        if (useStep || useRange)
+        if (useStep)
         {
-            var vt = HandleStringMap(mutilValue, type, ref end);
-            if (vt == 0 && useStep)
+            var vt = HandleStringMap(mutilValue, type, ref step);
+            if (vt == 0)
             {
                 throw new FormatException($"'/'之后未解析到数字");
             }
+        }
+        else if (useRange)
+        {
+            HandleStringMap(mutilValue, type, ref end);
         }
         else
         {
             HandleStringMap(mutilValue, type, ref start);
         }
-        SetTargets(ref store, start, end, min, max, useStep);
+        SetTargets(ref store, start, end, min, max, useStep, step);
     }
 
-    private static void SetTargets(ref CronPartial store, int start, int end, int min, int max, bool useStep)
+    private static void SetTargets(ref CronPartial store, int start, int end, int min, int max, bool useStep, int step)
     {
         if (store.NO_SPEC) return;
         if (store.ALL_SPEC && !useStep) return;
@@ -477,8 +490,8 @@ public partial class CronExpression
             throw new FormatException($"位置[{store.Position + 1}]的值非法");
         }
 
-        var step = useStep ? end : 1;
-        end = useStep ? max : end;
+        //step = useStep ? end : 1;
+        end = end == -1 ? max : end;
         for (int i = start; i <= end; i++)
         {
             if (i % step == 0)
@@ -533,6 +546,77 @@ public partial class CronExpression
         return valueType;
     }
 
+}
+
+/// <summary>
+/// 测试用的
+/// </summary>
+public partial class CronExpression
+{
+    public readonly struct CronField(bool allSpec, bool noSpec, int[] targets)
+    {
+        /// <summary>
+        /// 是否是'*'
+        /// </summary>
+        public bool AllSpec { get; } = allSpec;
+        /// <summary>
+        /// 是否是'?'
+        /// </summary>
+        public bool NoSpec { get; } = noSpec;
+        /// <summary>
+        /// 具体的数值
+        /// </summary>
+        public int[] Targets { get; } = targets;
+
+        public override string ToString()
+        {
+            return $"""
+                结果: {(AllSpec ? "*" : "")}{(NoSpec ? "?" : "")}{string.Join(", ",Targets)}
+                """;
+        }
+    }
+
+    public CronField Seconds
+    {
+        get => new(second.ALL_SPEC, second.NO_SPEC, [.. second.Targets]);
+    }
+
+    public CronField Minutes
+    {
+        get => new(minute.ALL_SPEC, minute.NO_SPEC, [.. minute.Targets]);
+    }
+
+    public CronField Hours
+    {
+        get => new(hour.ALL_SPEC, hour.NO_SPEC, [.. hour.Targets]);
+    }
+
+    public CronField DayOfMonths
+    {
+        get => new(dayOfMonth.ALL_SPEC, dayOfMonth.NO_SPEC, [.. dayOfMonth.Targets]);
+    }
+
+    public CronField Months
+    {
+        get => new(month.ALL_SPEC, month.NO_SPEC, [.. month.Targets]);
+    }
+
+    public CronField DayOfWeeks
+    {
+        get => new(dayOfWeek.ALL_SPEC, dayOfWeek.NO_SPEC, [.. dayOfWeek.Targets]);
+    }
+
+    public override string ToString()
+    {
+        return $"""
+            Seconds: {Seconds}
+            Minutes: {Minutes}
+            Hours: {Hours}
+            DayOfMonths: {DayOfMonths}
+            Months: {Months}
+            DayOfWeeks: {DayOfWeeks}
+            """;
+    }
 }
 
 file static class Ex
