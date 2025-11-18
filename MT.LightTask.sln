@@ -13,6 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MT.LightTask.Test", "test\M
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{6667B4E9-785A-4C60-861C-0672AB427419}"
 	ProjectSection(SolutionItems) = preProject
+		.github\workflows\push_nuget.yml = .github\workflows\push_nuget.yml
 		doc\更新日志.md = doc\更新日志.md
 	EndProjectSection
 EndProject
