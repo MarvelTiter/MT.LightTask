@@ -11,7 +11,7 @@ internal static class TaskSchedulerExtensions
     }
 }
 
-internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
+internal sealed class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
 {
     private SchedulerRunner? runner;
     private CancellationTokenSource? schedulerTokenSource;
@@ -113,7 +113,7 @@ internal class DefaultTaskScheduler(string name) : ITaskScheduler, IDisposable
         _ = Aop.NotifyTaskScheduleChangedAsync(this);
     }
 
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (!disposedValue)
         {

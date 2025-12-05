@@ -16,6 +16,7 @@ public interface ITaskCenter
     IServiceProvider ServiceProvider { get; }
     ITaskCenter AddTask(string name, ITask task, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder);
     //void Start(CancellationToken cancellationToken);
+    ITaskCenter AddTask<TContext>(string name, ITask<TContext> task, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder);
     IEnumerable<ITaskScheduler> TaskSchedulers();
     ITaskScheduler? GetScheduler(string name);
     void Log(string message);
@@ -23,12 +24,6 @@ public interface ITaskCenter
     void Stop(CancellationToken cancellationToken);
 
     #region events
-    //Action<ITaskScheduler>? OnError { get; set; }
-    //Action<ITaskScheduler>? OnCompletedSuccessfully { get; set; }
-
-    //Func<ITaskScheduler, Task>? OnErrorAsync { get; set; }
-    //Func<ITaskScheduler, Task>? OnCompletedAsync { get; set; }
-    //Func<ITaskScheduler, Task>? OnCompletedSuccessfullyAsync { get; set; }
 
     event Action<TaskEventArgs>? OnTaskStatusChanged;
     event Action<TaskEventArgs>? OnTaskScheduleChanged;
