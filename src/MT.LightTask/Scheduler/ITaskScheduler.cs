@@ -1,19 +1,24 @@
-﻿namespace MT.LightTask;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace MT.LightTask;
 
 /// <summary>
 /// 任务调度器接口
 /// </summary>
-public interface ITaskScheduler
+public interface ITaskScheduler : IDisposable
 {
+
+    [NotNull] internal Action<string>? Log { get; set; }
+    internal bool CanRetry { get; }
     /// <summary>
     /// 调度器名称
     /// </summary>
     string Name { get; }
 
-    /// <summary>
-    /// 调度器的任务
-    /// </summary>
-    ITask? Task { get; set; }
+    ///// <summary>
+    ///// 调度器的任务
+    ///// </summary>
+    //ITask? Task { get; set; }
 
     /// <summary>
     /// 调度任务发生的异常
@@ -23,7 +28,7 @@ public interface ITaskScheduler
     /// <summary>
     /// 调度策略
     /// </summary>
-    IScheduleStrategy? Strategy { get; set; }
+    [NotNull] IScheduleStrategy? Strategy { get; set; }
 
     /// <summary>
     /// 当前任务状态

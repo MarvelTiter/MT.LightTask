@@ -1,15 +1,15 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Xml.Linq;
 
 namespace MT.LightTask;
 
-internal sealed class DefaultTaskScheduler(string name) : DefaultTaskSchedulerBase<DefaultTaskScheduler>(name)
+internal sealed class DefaultTaskSchedulerWithContext<TContext>(string name) : DefaultTaskSchedulerBase<DefaultTaskSchedulerWithContext<TContext>>(name)
 {
-    private ITask? task;
-    internal void InternalStart(ITask task, IScheduleStrategy strategy)
+    private ITask<TContext>? task;
+    private TContext context = default!;
+    internal void InternalStart(ITask<TContext> task, TContext context, IScheduleStrategy strategy)
     {
         this.task = task;
+        this.context = context;
         Strategy = strategy;
         Log($"任务[{Name}]: 初始化");
 
@@ -20,7 +20,7 @@ internal sealed class DefaultTaskScheduler(string name) : DefaultTaskSchedulerBa
             {
                 await UpdateTaskStatusAsync(Strategy.RetryTimes > 0 ? TaskRunStatus.Retry : TaskRunStatus.Running);
                 var start = Stopwatch.GetTimestamp();
-                await this.task.ExecuteAsync(token).ConfigureAwait(false);
+                await this.task.ExecuteAsync(this.context, token).ConfigureAwait(false);
                 Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
                 await UpdateTaskStatusAsync(TaskRunStatus.Success);
                 // reset
