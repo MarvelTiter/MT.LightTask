@@ -14,5 +14,6 @@ public interface IStrategyBuilder
     /// <param name="durationProvider"></param>
     /// <returns></returns>
     IStrategyBuilder WithRetry(int times, Func<int, TimeSpan> durationProvider);
+    [Obsolete("内部调用")]
     IScheduleStrategy Build();
 }

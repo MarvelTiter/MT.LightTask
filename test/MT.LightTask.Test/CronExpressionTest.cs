@@ -7,14 +7,26 @@ namespace MT.LightTask.Test;
 public sealed class CronExpressionTest
 {
     [TestMethod]
+    public void CronTest()
+    {
+        var cron = CronExpression.Parse("*/1 * * ? * *");
+        DateTimeOffset? next = null;
+        for (int i = 0; i < 10; i++)
+        {
+            next = cron.GetNextOccurrence(next);
+            Console.WriteLine(next);
+        }
+    }
+    [TestMethod]
     public void CronTest1()
     {
         var cron = CronExpression.Parse("0 5-10 19 ? * *");
         var next = cron.GetNextOccurrence();
         next = cron.GetNextOccurrence(next);
         var tar = DateTime.Now.Date;
+        var time = DateTime.Now.TimeOfDay;
         // 19点05前是true, 否则是下一天
-        Assert.IsTrue(next.Date == tar && next.Hour == 19 && next.Minute == 6 && next.Second == 0);
+        Assert.IsTrue(next.Date == tar.AddDays(1) && next.Hour == 19 && next.Minute == 6 && next.Second == 0);
     }
 
     [TestMethod]

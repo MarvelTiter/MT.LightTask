@@ -29,7 +29,7 @@ public class IntervalTaskTest
         var provider = services.BuildServiceProvider();
         var tc = provider.GetRequiredService<ITaskCenter>();
         var now = DateTimeOffset.Now;
-        tc.AddTask<IntervalTask>("测试", b => b.WithInterval(TimeSpan.FromSeconds(1)).Build());
+        tc.AddTask<IntervalTask>("测试", b => b.WithInterval(TimeSpan.FromSeconds(1)));
         await Task.Delay(TimeSpan.FromSeconds(10));
     }
 }

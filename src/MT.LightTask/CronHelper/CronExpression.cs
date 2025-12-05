@@ -444,7 +444,12 @@ public partial class CronExpression
             {
                 posOffset = i + 1;
                 useStep = true;
-                store.ALL_SPEC = false;
+                if (store.ALL_SPEC)
+                {
+                    start = min;
+                    end = max;
+                    store.ALL_SPEC = false;
+                }
                 if (useRange)
                 {
                     HandleStringMap(mutilValue, type, ref end);
@@ -571,7 +576,7 @@ public partial class CronExpression
         public override string ToString()
         {
             return $"""
-                结果: {(AllSpec ? "*" : "")}{(NoSpec ? "?" : "")}{string.Join(", ",Targets)}
+                结果: {(AllSpec ? "*" : "")}{(NoSpec ? "?" : "")}{string.Join(", ", Targets)}
                 """;
         }
     }

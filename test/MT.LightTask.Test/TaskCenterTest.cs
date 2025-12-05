@@ -29,13 +29,13 @@ public sealed class TaskCenterTest
         var provider = services.BuildServiceProvider();
         var tc = provider.GetRequiredService<ITaskCenter>();
         var now = DateTimeOffset.Now;
-        tc.AddTask<TestTask>("测试", b => b.Once(now.AddSeconds(2)).Build());
+        tc.AddTask<TestTask>("测试", b => b.Once(now.AddSeconds(2)));
         tc.AddTask("测试2", (s, t) =>
         {
             var c = s.GetRequiredService<TestContext>();
             c.Value += 50;
             return Task.CompletedTask;
-        }, b => b.Once(now.AddSeconds(3)).Build());
+        }, b => b.Once(now.AddSeconds(3)));
         await Task.Delay(TimeSpan.FromSeconds(4));
         var context = provider.GetRequiredService<TestContext>();
         Assert.IsTrue(context.Value == 150);
@@ -53,7 +53,7 @@ public sealed class TaskCenterTest
         var tc = provider.GetRequiredService<ITaskCenter>();
         var now = DateTimeOffset.Now;
         //0 0 1 1 1 ?        * * */6 * * ?
-        tc.AddTask<TestTask>("测试", b => b.WithCron("0 0 1 1 1 ?").Build());
+        tc.AddTask<TestTask>("测试", b => b.WithCron("0 0 1 1 1 ?"));
         //await Task.Delay(TimeSpan.FromSeconds(2));
         var scheduler = tc.GetScheduler("测试");
         scheduler?.RunImmediately();
@@ -73,7 +73,7 @@ public sealed class TaskCenterTest
         var provider = services.BuildServiceProvider();
         var tc = provider.GetRequiredService<ITaskCenter>();
         var now = DateTimeOffset.Now;
-        tc.AddTask<TestTask>("测试", b => b.Once(now.AddSeconds(2)).Build());
+        tc.AddTask<TestTask>("测试", b => b.Once(now.AddSeconds(2)));
         await Task.Delay(TimeSpan.FromSeconds(5));
         var context = provider.GetRequiredService<TestContext>();
         Assert.IsTrue(context.Value == 100);
