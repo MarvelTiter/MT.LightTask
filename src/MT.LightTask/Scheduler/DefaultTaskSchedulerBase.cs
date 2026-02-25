@@ -2,7 +2,7 @@
 
 namespace MT.LightTask;
 
-internal class DefaultTaskSchedulerBase<TScheduler>(string name) : ITaskScheduler
+internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITaskScheduler
     where TScheduler : ITaskScheduler
 {
     protected SchedulerRunner? runner;
@@ -17,6 +17,9 @@ internal class DefaultTaskSchedulerBase<TScheduler>(string name) : ITaskSchedule
     public TaskRunStatus TaskStatus { get; set; }
     public TaskScheduleStatus ScheduleStatus { get; set; }
     public bool CanRetry => Strategy.RetryLimit > 0 && Strategy.RetryTimes < Strategy.RetryLimit;
+
+    public abstract object? Context { get; }
+
     protected class SchedulerRunner(Func<CancellationToken, Task> work, TScheduler scheduler) : IDisposable
     {
         private CancellationToken schedulerCancelToken;

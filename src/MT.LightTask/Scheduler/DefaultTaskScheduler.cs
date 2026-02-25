@@ -7,6 +7,7 @@ namespace MT.LightTask;
 internal sealed class DefaultTaskScheduler(string name) : DefaultTaskSchedulerBase<DefaultTaskScheduler>(name)
 {
     private ITask? task;
+    public override object? Context => null;
     internal void InternalStart(ITask task, IScheduleStrategy strategy)
     {
         this.task = task;

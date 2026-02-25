@@ -6,6 +6,7 @@ internal sealed class DefaultTaskSchedulerWithContext<TContext>(string name) : D
 {
     private ITask<TContext>? task;
     private TContext context = default!;
+    public override object? Context => context;
     internal void InternalStart(ITask<TContext> task, TContext context, IScheduleStrategy strategy)
     {
         this.task = task;

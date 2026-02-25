@@ -55,4 +55,6 @@ public interface ITaskScheduler : IDisposable
     /// 停止调度器
     /// </summary>
     void Stop();
+
+    object? Context { get; }
 }
