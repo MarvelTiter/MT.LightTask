@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MT.LightTask.Extensions;
+using MT.LightTask.Storage;
 using System.Collections.Concurrent;
 
 namespace MT.LightTask;
@@ -141,4 +143,105 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITask
         => taskScheduleChanged.NotifyInvokeHandlers(new(scheduler, this));
     public Task NotifyTaskCompletedAsync(ITaskScheduler scheduler)
         => taskCompleted.NotifyInvokeHandlers(new(scheduler, this));
+
+    /// <summary>
+    /// 从存储中加载任务
+    /// </summary>
+    /// <returns></returns>
+    public async Task LoadTasksFromStorageAsync(ILightTaskStorage storage)
+    {
+        try
+        {
+            var configs = await storage.LoadAllTaskConfigsAsync();
+            foreach (var config in configs)
+            {
+                // 尝试从服务容器中获取任务实例
+#pragma warning disable IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
+                var taskType = Type.GetType(config.TypeName);
+#pragma warning restore IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
+                if (taskType == null)
+                {
+                    Log($"未找到任务类型 {config.Name}，跳过加载");
+                    continue;
+                }
+
+                var taskInstance = ServiceProvider.GetService(taskType);
+                if (taskInstance == null)
+                {
+                    Log($"未找到任务实例 {config.Name}，跳过加载");
+                    continue;
+                }
+
+                if (taskInstance is ITask task)
+                {
+                    AddTaskFromConfig(config, task);
+                }
+                else
+                {
+                    Log($"任务 {config.Name} 未实现 ITask 接口，跳过加载");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"从存储加载任务失败: {ex.Message}");
+        }
+    }
+
+    public async Task SaveTaskToStorageAsync(ILightTaskStorage storage, string taskName)
+    {
+        try
+        {
+            var sc = GetScheduler(taskName);
+            if (sc is null) return;
+            await storage.SaveTaskConfigAsync(sc.Config);
+        }
+        catch (Exception ex)
+        {
+            Log($"保存任务到存储失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 根据配置添加任务
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="task"></param>
+    private void AddTaskFromConfig(TaskConfig config, ITask task)
+    {
+        AddTask(config.Name, task, builder =>
+        {
+            switch (config.Type)
+            {
+                case MT.LightTask.Storage.ScheduleType.Once:
+                    if (config.StartTime.HasValue)
+                    {
+                        builder.Once(config.StartTime.Value);
+                    }
+                    break;
+                case MT.LightTask.Storage.ScheduleType.Cron:
+                    if (!string.IsNullOrEmpty(config.Cron))
+                    {
+                        builder.WithCron(config.Cron);
+                    }
+                    break;
+                case MT.LightTask.Storage.ScheduleType.Interval:
+                    if (config.Interval.HasValue)
+                    {
+                        builder.WithInterval(config.Interval.Value);
+                    }
+                    break;
+                case MT.LightTask.Storage.ScheduleType.Signal:
+                    builder.WithSignal();
+                    break;
+            }
+
+            if (config.RetryLimit > 0)
+            {
+                builder.WithRetry(config.RetryLimit, config.RetryIntervalBase);
+            }
+        });
+
+        Log($"从存储加载任务 {config.Name} 成功");
+    }
 }

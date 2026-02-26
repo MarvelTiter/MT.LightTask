@@ -1,8 +1,17 @@
-﻿namespace MT.LightTask;
+﻿using MT.LightTask.Storage;
+
+namespace MT.LightTask;
 
 internal class IntervalScheduleStrategy(TimeSpan interval) : DefaultScheduleStrategy
 {
     private readonly TimeSpan interval = interval;
+    public override void SetConfig(TaskConfig config)
+    {
+        config.Type = ScheduleType.Interval;
+        config.Interval = interval;
+        config.RetryLimit = RetryLimit;
+        config.RetryIntervalBase = RetryIntervalBase;
+    }
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         if (!LastRuntime.HasValue)

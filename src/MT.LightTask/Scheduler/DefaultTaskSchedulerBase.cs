@@ -19,6 +19,7 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
     public bool CanRetry => Strategy.RetryLimit > 0 && Strategy.RetryTimes < Strategy.RetryLimit;
 
     public abstract object? Context { get; }
+    public abstract string TaskTypeName { get; }
 
     protected class SchedulerRunner(Func<CancellationToken, Task> work, TScheduler scheduler) : IDisposable
     {

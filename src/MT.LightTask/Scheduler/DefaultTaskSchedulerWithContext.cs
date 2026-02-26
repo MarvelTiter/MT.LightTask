@@ -2,11 +2,17 @@
 
 namespace MT.LightTask;
 
-internal sealed class DefaultTaskSchedulerWithContext<TContext>(string name) : DefaultTaskSchedulerBase<DefaultTaskSchedulerWithContext<TContext>>(name)
+internal sealed class DefaultTaskSchedulerWithContext<TContext> : DefaultTaskSchedulerBase<DefaultTaskSchedulerWithContext<TContext>>
 {
     private ITask<TContext>? task;
     private TContext context = default!;
+    private readonly Lazy<string> taskTypeName;
+    public DefaultTaskSchedulerWithContext(string name) : base(name)
+    {
+        taskTypeName = new Lazy<string>(() => task?.GetType().AssemblyQualifiedName ?? throw new NullReferenceException("获取任务类型名称错误"));
+    }
     public override object? Context => context;
+    public override string TaskTypeName => taskTypeName.Value;
     internal void InternalStart(ITask<TContext> task, TContext context, IScheduleStrategy strategy)
     {
         this.task = task;

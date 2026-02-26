@@ -1,3 +1,5 @@
+﻿using MT.LightTask.Storage;
+
 namespace MT.LightTask;
 
 /// <summary>
@@ -5,6 +7,12 @@ namespace MT.LightTask;
 /// </summary>
 internal class SignalScheduleStrategy : DefaultScheduleStrategy
 {
+    public override void SetConfig(TaskConfig config)
+    {
+        config.Type = ScheduleType.Signal;
+        config.RetryLimit = RetryLimit;
+        config.RetryIntervalBase = RetryIntervalBase;
+    }
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         var signal = !cancellationToken.WaitHandle.WaitOne();

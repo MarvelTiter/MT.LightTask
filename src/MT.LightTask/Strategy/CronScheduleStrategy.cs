@@ -1,8 +1,18 @@
-﻿namespace MT.LightTask;
+﻿using MT.LightTask.Storage;
+
+namespace MT.LightTask;
 
 internal class CronScheduleStrategy(string cron) : DefaultScheduleStrategy
 {
     private readonly CronExpression Cron = CronExpression.Parse(cron);
+
+    public override void SetConfig(TaskConfig config)
+    {
+        config.Type = ScheduleType.Cron;
+        config.Cron = cron;
+        config.RetryLimit = RetryLimit;
+        config.RetryIntervalBase = RetryIntervalBase;
+    }
 
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {

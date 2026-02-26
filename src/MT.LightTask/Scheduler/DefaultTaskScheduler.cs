@@ -4,10 +4,16 @@ using System.Xml.Linq;
 
 namespace MT.LightTask;
 
-internal sealed class DefaultTaskScheduler(string name) : DefaultTaskSchedulerBase<DefaultTaskScheduler>(name)
+internal sealed class DefaultTaskScheduler : DefaultTaskSchedulerBase<DefaultTaskScheduler>
 {
     private ITask? task;
+    private readonly Lazy<string> taskTypeName;
+    public DefaultTaskScheduler(string name) : base(name)
+    {
+        taskTypeName = new Lazy<string>(() => task?.GetType().AssemblyQualifiedName ?? throw new NullReferenceException("获取任务类型名称错误"));
+    }
     public override object? Context => null;
+    public override string TaskTypeName => taskTypeName.Value;
     internal void InternalStart(ITask task, IScheduleStrategy strategy)
     {
         this.task = task;

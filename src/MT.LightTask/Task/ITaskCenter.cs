@@ -1,4 +1,6 @@
-﻿namespace MT.LightTask;
+﻿using MT.LightTask.Storage;
+
+namespace MT.LightTask;
 
 public readonly struct TaskEventArgs(ITaskScheduler task, ITaskCenter center)
 {
@@ -32,6 +34,13 @@ public interface ITaskCenter
     event Action<TaskEventArgs>? OnTaskStatusChanged;
     event Action<TaskEventArgs>? OnTaskScheduleChanged;
     event Action<TaskEventArgs>? OnCompleted;
+
+    /// <summary>
+    /// 从存储中加载任务
+    /// </summary>
+    /// <returns></returns>
+    Task LoadTasksFromStorageAsync(ILightTaskStorage storage);
+    Task SaveTaskToStorageAsync(ILightTaskStorage storage, string taskName);
 
     //Func<ITaskScheduler, Task>? OnTaskStatusChangedAsync { get; set; }
     IDisposable RegisterTaskStatusChangedHandler(Func<TaskEventArgs, Task> handler);

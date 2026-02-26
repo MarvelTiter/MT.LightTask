@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using MT.LightTask.Storage;
+using System.Diagnostics;
 
 namespace MT.LightTask;
 
@@ -12,11 +13,20 @@ class DefaultScheduleStrategy : IScheduleStrategy
 
     public TimeSpan LastRunElapsedTime { get; set; }
 
+    public virtual void SetConfig(TaskConfig config)
+    {
+        config.Type = ScheduleType.Once;
+        config.StartTime = StartTime;
+        config.RetryLimit = RetryLimit;
+        config.RetryIntervalBase = RetryIntervalBase;
+    }
+
     public TimeSpan Timeout { get => throw new NotImplementedException(); }
     public int RetryLimit { get; set; }
     public int RetryTimes { get; set; }
     public int RetryIntervalBase { get; set; }
     public Func<int, TimeSpan>? WaitDurationProvider { get; set; }
+
 
     public virtual bool WaitForExecute(CancellationToken cancellationToken)
     {

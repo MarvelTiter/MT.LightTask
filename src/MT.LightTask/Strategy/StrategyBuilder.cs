@@ -1,8 +1,10 @@
-﻿namespace MT.LightTask;
+﻿using MT.LightTask.Storage;
+
+namespace MT.LightTask;
 
 class StrategyBuilder : IStrategyBuilder
 {
-    int type = 0;
+    ScheduleType type = 0;
     DateTimeOffset? start;
     string? cron;
     int retry = 0;
@@ -13,26 +15,26 @@ class StrategyBuilder : IStrategyBuilder
     {
         return type switch
         {
-            1 => new DefaultScheduleStrategy()
+            ScheduleType.Once => new DefaultScheduleStrategy()
             {
                 StartTime = start,
                 RetryLimit = retry,
                 WaitDurationProvider = durationProvider,
                 RetryIntervalBase = baseInterval
             },
-            2 => new CronScheduleStrategy(cron!)
+            ScheduleType.Cron => new CronScheduleStrategy(cron!)
             {
                 RetryLimit = retry,
                 WaitDurationProvider = durationProvider,
                 RetryIntervalBase = baseInterval
             },
-            3 => new SignalScheduleStrategy()
+            ScheduleType.Signal => new SignalScheduleStrategy()
             {
                 RetryLimit = retry,
                 WaitDurationProvider = durationProvider,
                 RetryIntervalBase = baseInterval
             },
-            4 => new IntervalScheduleStrategy(interval!.Value)
+            ScheduleType.Interval => new IntervalScheduleStrategy(interval!.Value)
             {
                 WaitDurationProvider = durationProvider,
                 RetryIntervalBase = baseInterval
@@ -43,21 +45,28 @@ class StrategyBuilder : IStrategyBuilder
 
     public IStrategyBuilder Once(DateTimeOffset startTime)
     {
-        type = 1;
+        type = ScheduleType.Cron;
         start = startTime;
         return this;
     }
 
     public IStrategyBuilder WithCron(string cron)
     {
-        type = 2;
+        type = ScheduleType.Cron;
         this.cron = cron;
         return this;
     }
 
     public IStrategyBuilder WithSignal()
     {
-        type = 3;
+        type = ScheduleType.Signal;
+        return this;
+    }
+
+    public IStrategyBuilder WithInterval(TimeSpan interval)
+    {
+        type = ScheduleType.Interval;
+        this.interval = interval;
         return this;
     }
 
@@ -75,10 +84,4 @@ class StrategyBuilder : IStrategyBuilder
         return this;
     }
 
-    public IStrategyBuilder WithInterval(TimeSpan interval)
-    {
-        type = 4;
-        this.interval = interval;
-        return this;
-    }
 }

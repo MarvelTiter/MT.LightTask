@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MT.LightTask.Storage;
+using System.ComponentModel.DataAnnotations;
 
 namespace MT.LightTask;
 
@@ -11,7 +12,7 @@ public interface IScheduleStrategy
     ///// 任务开始时间
     ///// </summary>
     //DateTimeOffset? StartTime { get; }
-
+    internal void SetConfig(TaskConfig config);
     /// <summary>
     /// 上次任务执行时间
     /// </summary>

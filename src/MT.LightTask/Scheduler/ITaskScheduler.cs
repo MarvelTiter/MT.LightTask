@@ -57,4 +57,5 @@ public interface ITaskScheduler : IDisposable
     void Stop();
 
     object? Context { get; }
+    internal string TaskTypeName { get; }
 }
