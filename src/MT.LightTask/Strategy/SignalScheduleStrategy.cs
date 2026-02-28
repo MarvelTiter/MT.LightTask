@@ -7,7 +7,6 @@ namespace MT.LightTask;
 /// </summary>
 internal class SignalScheduleStrategy : DefaultScheduleStrategy
 {
-    public override ScheduleType ScheduleType => ScheduleType.Signal;
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         var signal = !cancellationToken.WaitHandle.WaitOne();

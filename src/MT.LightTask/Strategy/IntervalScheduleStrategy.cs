@@ -4,9 +4,7 @@ namespace MT.LightTask;
 
 internal class IntervalScheduleStrategy(TimeSpan interval) : DefaultScheduleStrategy
 {
-    public override ScheduleType ScheduleType => ScheduleType.Interval;
     public TimeSpan Interval { get; set; } = interval;
-    public override string GetArgs() => Interval.ToString();
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         if (!LastRuntime.HasValue)

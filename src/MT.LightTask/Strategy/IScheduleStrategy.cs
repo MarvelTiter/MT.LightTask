@@ -9,9 +9,6 @@ namespace MT.LightTask;
 /// </summary>
 public interface IScheduleStrategy
 {
-    internal bool ShouldStroage { get; }
-    internal ScheduleType ScheduleType { get; }
-    internal string GetArgs();
     /// <summary>
     /// 任务开始时间
     /// </summary>

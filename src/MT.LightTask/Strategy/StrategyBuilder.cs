@@ -35,7 +35,6 @@ public sealed class StrategyBuilder : IStrategyBuilder
                 Timeout = Timeout,
                 RetryWaitStrategy = Strategy,
                 RetryIntervalBase = BaseInterval,
-                ShouldStroage = ShouldStroage,
             },
             ScheduleType.Cron => new CronScheduleStrategy(Cron!)
             {
@@ -43,7 +42,6 @@ public sealed class StrategyBuilder : IStrategyBuilder
                 Timeout = Timeout,
                 RetryWaitStrategy = Strategy,
                 RetryIntervalBase = BaseInterval,
-                ShouldStroage = ShouldStroage,
             },
             ScheduleType.Signal => new SignalScheduleStrategy()
             {
@@ -51,14 +49,12 @@ public sealed class StrategyBuilder : IStrategyBuilder
                 Timeout = Timeout,
                 RetryWaitStrategy = Strategy,
                 RetryIntervalBase = BaseInterval,
-                ShouldStroage = ShouldStroage,
             },
             ScheduleType.Interval => new IntervalScheduleStrategy(Interval!.Value)
             {
                 Timeout = Timeout,
                 RetryWaitStrategy = Strategy,
                 RetryIntervalBase = BaseInterval,
-                ShouldStroage = ShouldStroage,
             },
             _ => throw new ArgumentException()
         };

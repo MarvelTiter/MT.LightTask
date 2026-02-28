@@ -4,7 +4,6 @@ namespace MT.LightTask;
 
 internal class OnceScheduleStrategy : DefaultScheduleStrategy
 {
-    public override ScheduleType ScheduleType => ScheduleType.Once;
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         // 如果有上次运行时间，说明已经执行过了

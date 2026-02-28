@@ -14,19 +14,15 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
     public DateTimeOffset? NextRuntime { get; set; }
 
     public TimeSpan LastRunElapsedTime { get; set; }
-    public bool ShouldStroage { get; set; }
     public TimeSpan? Timeout { get; set; }
     public int RetryLimit { get; set; }
     public int RetryTimes { get; set; }
     public int RetryIntervalBase { get; set; }
     public Func<int, TimeSpan>? WaitDurationProvider { get; set; }
     [NotNull] public IRetryWaitStrategy? RetryWaitStrategy { get; set; }
-    public abstract ScheduleType ScheduleType { get; }
+   
     public abstract bool WaitForExecute(CancellationToken cancellationToken);
-    public virtual string GetArgs()
-    {
-        return string.Empty;
-    }
+    
     public virtual Dictionary<string, object?> SaveData()
     {
         var dic = RetryWaitStrategy.Serialize();
