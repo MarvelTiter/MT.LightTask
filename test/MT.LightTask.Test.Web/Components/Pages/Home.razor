@@ -1,0 +1,35 @@
+﻿@page "/"
+@using MT.LightTask.Test.Web.Tasks
+@inject ITaskCenter Tc
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<button @onclick="@AddTask">添加任务</button>
+<button @onclick="@StateHasChanged">刷新</button>
+
+<table>
+    @foreach (var item in Tasks)
+    {
+        <tr>
+            <td>@item.Name</td>
+            <td>@item.LastRuntime</td>
+            <td>@item.LastRunElapsedTime</td>
+        </tr>
+    }
+
+</table>
+
+@code {
+    private void AddTask()
+    {
+        // Tc.AddTask<RetryTask>("测试", b => b.WithCron("*/5 * * * * ?").WithRetry(3).WithTimeout(TimeSpan.FromSeconds(1)));
+        Tc.AddTask<RetryTask>("测试1", b => b.WithCron("*/5 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
+        Tc.AddTask<RetryTask>("测试2", b => b.WithInterval(TimeSpan.FromSeconds(15)).WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
+        // Tc.AddTaskWithContext<TaskWithContext, int>("测试Context", 1, b => b.WithCron("*/5 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)));
+    }
+
+    private IEnumerable<TaskInfo> Tasks => Tc.GetTaskInfos();
+}

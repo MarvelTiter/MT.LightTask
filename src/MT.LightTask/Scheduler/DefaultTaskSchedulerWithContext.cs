@@ -1,7 +1,9 @@
-﻿using System.Diagnostics;
+﻿using MT.LightTask.Storage;
+using System.Diagnostics;
 
 namespace MT.LightTask;
 
+[Obsolete]
 internal sealed class DefaultTaskSchedulerWithContext<TContext> : DefaultTaskSchedulerBase<DefaultTaskSchedulerWithContext<TContext>>
 {
     private ITask<TContext>? task;
@@ -12,7 +14,30 @@ internal sealed class DefaultTaskSchedulerWithContext<TContext> : DefaultTaskSch
         taskTypeName = new Lazy<string>(() => task?.GetType().AssemblyQualifiedName ?? throw new NullReferenceException("获取任务类型名称错误"));
     }
     public override object? Context => context;
+
     public override string TaskTypeName => taskTypeName.Value;
+
+//    public override void StorageTask()
+//    {
+//        if (Storage is null) return;
+//        lock (locker)
+//        {
+//            var dic = Strategy.SaveData();
+//#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
+//#pragma warning disable IL3050 // Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.
+//            var config = new TaskConfig()
+//            {
+//                Name = Name,
+//                TaskTypeName = TaskTypeName,
+//                Type = Strategy.ScheduleType,
+//                Values = dic,
+//            };
+//#pragma warning restore IL3050 // Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.
+//#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
+//            Storage.SaveTaskConfig(config);
+//        }
+//    }
+
     internal void InternalStart(ITask<TContext> task, TContext context, IScheduleStrategy strategy)
     {
         this.task = task;
@@ -41,10 +66,7 @@ internal sealed class DefaultTaskSchedulerWithContext<TContext> : DefaultTaskSch
                 Exception = ex;
                 await UpdateTaskStatusAsync(TaskRunStatus.OccurException);
                 Log($"任务[{Name}] 异常: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
-                if (CanRetry)
-                {
-                    Strategy.RetryTimes++;
-                }
+                throw;
             }
             finally
             {
@@ -53,7 +75,7 @@ internal sealed class DefaultTaskSchedulerWithContext<TContext> : DefaultTaskSch
             }
         }
 
-        runner = new SchedulerRunner(work, this);
+        runner = new StrategyRunner(work, this);
         Log($"任务[{Name}]: 初始化完成");
         Start();
     }

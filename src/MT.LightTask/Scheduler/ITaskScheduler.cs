@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using MT.LightTask.Storage;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MT.LightTask;
 
@@ -9,7 +10,7 @@ public interface ITaskScheduler : IDisposable
 {
 
     [NotNull] internal Action<string>? Log { get; set; }
-    internal bool CanRetry { get; }
+    internal ILightTaskStorage? Storage { get; }
     /// <summary>
     /// 调度器名称
     /// </summary>
@@ -57,5 +58,6 @@ public interface ITaskScheduler : IDisposable
     void Stop();
 
     object? Context { get; }
+
     internal string TaskTypeName { get; }
 }

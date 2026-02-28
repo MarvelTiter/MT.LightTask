@@ -1,4 +1,7 @@
-﻿namespace MT.LightTask;
+﻿using MT.LightTask.Storage;
+using MT.LightTask.Strategy;
+
+namespace MT.LightTask;
 
 public interface IStrategyBuilder
 {
@@ -7,6 +10,11 @@ public interface IStrategyBuilder
     IStrategyBuilder WithCron(string cron);
     IStrategyBuilder WithSignal();
     IStrategyBuilder WithRetry(int times, int baseInterval = 1000);
+    IStrategyBuilder WithTimeout(TimeSpan timeout);
+    IStrategyBuilder UseRetryStrategy<T>(int times) where T : IRetryWaitStrategy, new();
+    IStrategyBuilder Storage();
+
+    [Obsolete("使用UseRetryStrategy", true)]
     /// <summary>
     /// 重试配置, 自定义退避策略
     /// </summary>
@@ -14,6 +22,6 @@ public interface IStrategyBuilder
     /// <param name="durationProvider"></param>
     /// <returns></returns>
     IStrategyBuilder WithRetry(int times, Func<int, TimeSpan> durationProvider);
-    [Obsolete("内部调用")]
-    IScheduleStrategy Build();
+
+    internal IScheduleStrategy Build();
 }

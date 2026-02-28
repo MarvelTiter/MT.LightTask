@@ -9,6 +9,7 @@ public interface ITask
     Task ExecuteAsync(CancellationToken cancellationToken = default);
 }
 
+[Obsolete]
 /// <summary>
 /// 带上下文的定时任务接口
 /// </summary>

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using MT.LightTask.Storage;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Xml.Linq;
 
@@ -14,6 +15,7 @@ internal sealed class DefaultTaskScheduler : DefaultTaskSchedulerBase<DefaultTas
     }
     public override object? Context => null;
     public override string TaskTypeName => taskTypeName.Value;
+
     internal void InternalStart(ITask task, IScheduleStrategy strategy)
     {
         this.task = task;
@@ -30,21 +32,18 @@ internal sealed class DefaultTaskScheduler : DefaultTaskSchedulerBase<DefaultTas
                 await this.task.ExecuteAsync(token).ConfigureAwait(false);
                 Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
                 await UpdateTaskStatusAsync(TaskRunStatus.Success);
-                // reset
             }
             catch (TaskCanceledException)
             {
                 await UpdateTaskStatusAsync(TaskRunStatus.Canceled);
+                throw;
             }
             catch (Exception ex)
             {
                 Exception = ex;
                 await UpdateTaskStatusAsync(TaskRunStatus.OccurException);
                 Log($"任务[{Name}] 异常: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
-                if (CanRetry)
-                {
-                    Strategy.RetryTimes++;
-                }
+                throw;
             }
             finally
             {
@@ -53,7 +52,7 @@ internal sealed class DefaultTaskScheduler : DefaultTaskSchedulerBase<DefaultTas
             }
         }
 
-        runner = new SchedulerRunner(work, this);
+        runner = new StrategyRunner(work, this);
         Log($"任务[{Name}]: 初始化完成");
         Start();
     }

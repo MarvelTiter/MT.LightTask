@@ -5,11 +5,11 @@ namespace MT.LightTask.Storage;
 
 public interface ILightTaskStorage
 {
-    Task SaveTaskConfigAsync(TaskConfig config);
+    Task LoadTasksAsync(ITaskCenter tc, CancellationToken cancellationToken);
+    void SaveTaskConfig(TaskConfig config);
 
-    Task<TaskConfig?> LoadTaskConfigAsync(string name);
+    Task<TaskStatus?> LoadTaskStatusAsync(string name, CancellationToken cancellationToken);
+    void SaveTaskStatus(string name, TaskStatus config);
 
-    Task<IEnumerable<TaskConfig>> LoadAllTaskConfigsAsync();
-
-    Task<bool> DeleteTaskConfigAsync(string name);
+    void RemoveTaskStorage(string name);
 }

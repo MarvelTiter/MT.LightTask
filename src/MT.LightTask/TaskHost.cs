@@ -12,7 +12,7 @@ class TaskHost(ITaskCenter center, ILightTaskStorage storage) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await center.LoadTasksFromStorageAsync(storage);
+        await storage.LoadTasksAsync(center, cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

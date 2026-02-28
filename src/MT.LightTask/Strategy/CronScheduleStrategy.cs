@@ -4,16 +4,9 @@ namespace MT.LightTask;
 
 internal class CronScheduleStrategy(string cron) : DefaultScheduleStrategy
 {
+    public override ScheduleType ScheduleType => ScheduleType.Cron;
     private readonly CronExpression Cron = CronExpression.Parse(cron);
-
-    public override void SetConfig(TaskConfig config)
-    {
-        config.Type = ScheduleType.Cron;
-        config.Cron = cron;
-        config.RetryLimit = RetryLimit;
-        config.RetryIntervalBase = RetryIntervalBase;
-    }
-
+    public override string GetArgs() => cron;
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         var next = Cron.GetNextOccurrence(DateTimeOffset.Now);
