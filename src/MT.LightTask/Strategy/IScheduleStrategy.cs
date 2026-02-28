@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MT.LightTask.Storage;
+using MT.LightTask.Strategy;
+using System.ComponentModel.DataAnnotations;
 
 namespace MT.LightTask;
 
@@ -7,11 +9,10 @@ namespace MT.LightTask;
 /// </summary>
 public interface IScheduleStrategy
 {
-    ///// <summary>
-    ///// 任务开始时间
-    ///// </summary>
-    //DateTimeOffset? StartTime { get; }
-
+    /// <summary>
+    /// 任务开始时间
+    /// </summary>
+    DateTimeOffset? StartTime { get; set; }
     /// <summary>
     /// 上次任务执行时间
     /// </summary>
@@ -31,7 +32,7 @@ public interface IScheduleStrategy
     /// <summary>
     /// 任务超时时间
     /// </summary>
-    TimeSpan Timeout { get; }
+    TimeSpan? Timeout { get; }
     /// <summary>
     /// 重试次数限制，0表示不重试
     /// </summary>
@@ -53,12 +54,20 @@ public interface IScheduleStrategy
     /// 依此类推
     /// </summary>
     int RetryIntervalBase { get; set; }
+    IRetryWaitStrategy RetryWaitStrategy { get; set; }
+
+    [Obsolete("使用IRetryWaitStrategy")]
     Func<int, TimeSpan>? WaitDurationProvider { get; set; }
     /// <summary>
     /// 重试次数
     /// </summary>
     int RetryTimes { get; internal set; }
     bool WaitForExecute(CancellationToken cancellationToken);
+
+    Dictionary<string, object?> SaveData();
+
+    void LoadData(Dictionary<string, object?> datas);
+
 }
 
 public enum TaskRunStatus
@@ -75,8 +84,6 @@ public enum TaskRunStatus
     Timeout,
     [Display(Name = "取消")]
     Canceled,
-    [Display(Name = "停用")]
-    Disabled,
     [Display(Name = "异常")]
     OccurException,
 }

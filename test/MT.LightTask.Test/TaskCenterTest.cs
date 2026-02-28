@@ -14,6 +14,15 @@ public sealed class TaskCenterTest
             return Task.CompletedTask;
         }
     }
+
+    class TimeoutTask : ITask
+    {
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(TimeSpan.FromMinutes(5));
+        }
+    }
+
     class TestContext
     {
         public int Value { get; set; }
@@ -77,5 +86,19 @@ public sealed class TaskCenterTest
         await Task.Delay(TimeSpan.FromSeconds(5));
         var context = provider.GetRequiredService<TestContext>();
         Assert.IsTrue(context.Value == 100);
+    }
+
+    [TestMethod]
+    public async Task TaskTimeoutTest()
+    {
+        var services = new ServiceCollection();
+        services.AddLightTask();
+        services.AddScoped<TimeoutTask>();
+        services.AddLogging();
+        var provider = services.BuildServiceProvider();
+        var tc = provider.GetRequiredService<ITaskCenter>();
+        var now = DateTimeOffset.Now;
+        tc.AddTask<TimeoutTask>("超时任务", b => b.Once(now.AddSeconds(2)).WithRetry(3).WithTimeout(TimeSpan.FromSeconds(10)));
+        await Task.Delay(TimeSpan.FromSeconds(30));
     }
 }

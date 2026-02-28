@@ -1,4 +1,6 @@
-﻿namespace MT.LightTask;
+﻿using MT.LightTask.Storage;
+
+namespace MT.LightTask;
 
 public readonly struct TaskEventArgs(ITaskScheduler task, ITaskCenter center)
 {
@@ -14,13 +16,15 @@ public readonly struct TaskEventArgs(ITaskScheduler task, ITaskCenter center)
 public interface ITaskCenter
 {
     IServiceProvider ServiceProvider { get; }
-    [Obsolete("使用(Action<IStrategyBuilder> strategyBuilder)重载")]
-    ITaskCenter AddTask(string name, ITask task, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder);
-    ITaskCenter AddTask(string name, ITask task, Action<IStrategyBuilder> strategyBuilder);
-    //void Start(CancellationToken cancellationToken);
-    [Obsolete("使用(Action<IStrategyBuilder> strategyBuilder)重载")]
-    ITaskCenter AddTask<TContext>(string name, ITask<TContext> task, TContext context, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder);
-    ITaskCenter AddTask<TContext>(string name, ITask<TContext> task, TContext context, Action<IStrategyBuilder> strategyBuilder);
+    
+    ITaskCenter AddTask(string name, ITask task, IScheduleStrategy? strategy = null);
+
+    ITaskCenter AddTask(string name, ITask task, Action<IStrategyBuilder> builder);
+
+    [Obsolete]
+    ITaskCenter AddTask<TContext>(string name, ITask<TContext> task, TContext context, IScheduleStrategy? strategy = null);
+
+    ITaskCenter UseStorage(ILightTaskStorage storage);
     IEnumerable<ITaskScheduler> TaskSchedulers();
     ITaskScheduler? GetScheduler(string name);
     void Log(string message);

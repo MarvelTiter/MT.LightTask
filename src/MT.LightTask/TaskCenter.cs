@@ -1,83 +1,97 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MT.LightTask.Storage;
 using System.Collections.Concurrent;
 
 namespace MT.LightTask;
 
-public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITaskAopNotify
+public class TaskCenter : ITaskCenter//, ITaskAopNotify
 {
     private readonly ConcurrentDictionary<string, ITaskScheduler> tasks = [];
+    private ILightTaskStorage? storage;
+    public IServiceProvider ServiceProvider { get; }
+    private readonly ILogger<TaskCenter> logger;
 
-    public IServiceProvider ServiceProvider { get; } = serviceProvider;
-    private readonly ILogger<TaskCenter> logger = serviceProvider.GetRequiredService<ILogger<TaskCenter>>();
+    public TaskCenter(IServiceProvider serviceProvider)
+    {
+        ServiceProvider = serviceProvider;
+        logger = serviceProvider.GetRequiredService<ILogger<TaskCenter>>();
+        storage = TaskOptions.Instance.EnableStorage ? serviceProvider.GetService<ILightTaskStorage>() : null;
+    }
 
     public event Action<TaskEventArgs>? OnTaskStatusChanged;
     public event Action<TaskEventArgs>? OnTaskScheduleChanged;
     public event Action<TaskEventArgs>? OnCompleted;
 
-    public ITaskCenter AddTask(string name, ITask task, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder)
+    public ITaskCenter UseStorage(ILightTaskStorage storage)
     {
-        var scheduler = (DefaultTaskScheduler)tasks.GetOrAdd(name, k =>
-         {
-             var scheduler = new DefaultTaskScheduler(k)
-             {
-                 Log = Log,
-                 Aop = this
-             };
-             return scheduler;
-         });
-        var b = new StrategyBuilder();
-        var strategy = strategyBuilder.Invoke(b);
-        scheduler.InternalStart(task, strategy);
+        this.storage = storage;
         return this;
     }
 
-    public ITaskCenter AddTask<TContext>(string name, ITask<TContext> task, TContext context, Func<IStrategyBuilder, IScheduleStrategy> strategyBuilder)
-    {
-        var scheduler = (DefaultTaskSchedulerWithContext<TContext>)tasks.GetOrAdd(name, k =>
-        {
-            var scheduler = new DefaultTaskSchedulerWithContext<TContext>(k)
-            {
-                Log = Log,
-                Aop = this
-            };
-            return scheduler;
-        });
-        var b = new StrategyBuilder();
-        var strategy = strategyBuilder.Invoke(b);
-        scheduler.InternalStart(task, context, strategy);
-        return this;
-    }
-    public ITaskCenter AddTask(string name, ITask task, Action<IStrategyBuilder> strategyBuilder)
+    public ITaskCenter AddTask(string name, ITask task, IScheduleStrategy? strategy = null)
     {
         var scheduler = (DefaultTaskScheduler)tasks.GetOrAdd(name, k =>
         {
             var scheduler = new DefaultTaskScheduler(k)
             {
                 Log = Log,
-                Aop = this
+                Storage = storage,
+                Aop = this,
             };
             return scheduler;
         });
-        var b = new StrategyBuilder();
-        strategyBuilder.Invoke(b);
-        scheduler.InternalStart(task, b.Build());
+        strategy ??= StrategyBuilder.Default.Once(DateTimeOffset.Now.AddSeconds(1)).Build();
+        scheduler.InternalStart(task, strategy);
         return this;
     }
-    public ITaskCenter AddTask<TContext>(string name, ITask<TContext> task, TContext context, Action<IStrategyBuilder> strategyBuilder)
+
+    public ITaskCenter AddTask(string name, ITask task, Action<IStrategyBuilder> builder)
+    {
+        var scheduler = (DefaultTaskScheduler)tasks.GetOrAdd(name, k =>
+        {
+            var scheduler = new DefaultTaskScheduler(k)
+            {
+                Log = Log,
+                Storage = storage,
+                Aop = this,
+            };
+            return scheduler;
+        });
+        //strategy ??= StrategyBuilder.Default.Once(DateTimeOffset.Now.AddSeconds(1)).Build();
+        var b = StrategyBuilder.Default;
+        builder.Invoke(b);
+        scheduler.InternalStart(task, b.Build());
+        if (b.ShouldStroage && storage is not null)
+        {
+            var config = new TaskConfig()
+            {
+                Name = scheduler.Name,
+                TaskTypeName = scheduler.TaskTypeName,
+                Builder = b
+                //Values = dic
+            };
+            storage.SaveTaskConfig(config);
+        }
+        return this;
+    }
+
+    [Obsolete]
+    public ITaskCenter AddTask<TContext>(string name, ITask<TContext> task, TContext context, IScheduleStrategy? strategy = null)
     {
         var scheduler = (DefaultTaskSchedulerWithContext<TContext>)tasks.GetOrAdd(name, k =>
         {
             var scheduler = new DefaultTaskSchedulerWithContext<TContext>(k)
             {
                 Log = Log,
+                Storage = storage,
                 Aop = this
             };
             return scheduler;
         });
         var b = new StrategyBuilder();
-        strategyBuilder.Invoke(b);
-        scheduler.InternalStart(task, context, b.Build());
+        strategy ??= StrategyBuilder.Default.Once(DateTimeOffset.Now.AddSeconds(1)).Build();
+        scheduler.InternalStart(task, context, strategy);
         return this;
     }
 
@@ -86,6 +100,7 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITask
         var b = tasks.TryRemove(schedulerName, out var scheduler);
         scheduler?.Stop();
         scheduler?.Dispose();
+        storage?.RemoveTaskStorage(schedulerName);
         return b;
     }
     public ITaskScheduler? GetScheduler(string name)
@@ -126,6 +141,8 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITask
     private readonly AsyncHandlerManager<TaskEventArgs> taskScheduleChanged = new();
     private readonly AsyncHandlerManager<TaskEventArgs> taskCompleted = new();
 
+    
+
     public IDisposable RegisterTaskStatusChangedHandler(Func<TaskEventArgs, Task> handler)
         => taskStatusChanged.RegisterHandler(handler);
 
@@ -141,4 +158,5 @@ public class TaskCenter(IServiceProvider serviceProvider) : ITaskCenter//, ITask
         => taskScheduleChanged.NotifyInvokeHandlers(new(scheduler, this));
     public Task NotifyTaskCompletedAsync(ITaskScheduler scheduler)
         => taskCompleted.NotifyInvokeHandlers(new(scheduler, this));
+
 }

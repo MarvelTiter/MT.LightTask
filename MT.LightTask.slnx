@@ -7,6 +7,7 @@
     <Project Path="src/MT.LightTask/MT.LightTask.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/MT.LightTask.Test.Web/MT.LightTask.Test.Web.csproj" Id="dfb06880-ee01-422e-bfbe-8e2c21ef71c5" />
     <Project Path="test/MT.LightTask.Test/MT.LightTask.Test.csproj" />
   </Folder>
 </Solution>

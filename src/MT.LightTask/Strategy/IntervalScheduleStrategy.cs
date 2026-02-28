@@ -1,8 +1,10 @@
-﻿namespace MT.LightTask;
+﻿using MT.LightTask.Storage;
+
+namespace MT.LightTask;
 
 internal class IntervalScheduleStrategy(TimeSpan interval) : DefaultScheduleStrategy
 {
-    private readonly TimeSpan interval = interval;
+    public TimeSpan Interval { get; set; } = interval;
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         if (!LastRuntime.HasValue)
@@ -10,7 +12,7 @@ internal class IntervalScheduleStrategy(TimeSpan interval) : DefaultScheduleStra
             Set();
             return true;
         }
-        if (DateTimeOffset.Now > NextRuntime)
+        if (!NextRuntime.HasValue || DateTimeOffset.Now > NextRuntime)
         {
             Set();
             return true;
@@ -23,7 +25,7 @@ internal class IntervalScheduleStrategy(TimeSpan interval) : DefaultScheduleStra
         void Set()
         {
             LastRuntime = DateTimeOffset.Now;
-            NextRuntime = DateTimeOffset.Now + interval;
+            NextRuntime = DateTimeOffset.Now + Interval;
         }
     }
 }
