@@ -25,6 +25,10 @@ public class TaskCenter : ITaskCenter//, ITaskAopNotify
 
     public ITaskCenter UseStorage(ILightTaskStorage storage)
     {
+        if (!TaskOptions.Instance.EnableStorage)
+        {
+            TaskOptions.Instance.EnableStorage = true;
+        }
         this.storage = storage;
         return this;
     }
@@ -62,14 +66,13 @@ public class TaskCenter : ITaskCenter//, ITaskAopNotify
         var b = StrategyBuilder.Default;
         builder.Invoke(b);
         scheduler.InternalStart(task, b.Build());
-        if (b.ShouldStroage && storage is not null)
+        if (b.ShouldStroage && storage is not null && TaskOptions.Instance.EnableStorage)
         {
             var config = new TaskConfig()
             {
                 Name = scheduler.Name,
                 TaskTypeName = scheduler.TaskTypeName,
                 Builder = b
-                //Values = dic
             };
             storage.SaveTaskConfig(config);
         }
@@ -141,7 +144,7 @@ public class TaskCenter : ITaskCenter//, ITaskAopNotify
     private readonly AsyncHandlerManager<TaskEventArgs> taskScheduleChanged = new();
     private readonly AsyncHandlerManager<TaskEventArgs> taskCompleted = new();
 
-    
+
 
     public IDisposable RegisterTaskStatusChangedHandler(Func<TaskEventArgs, Task> handler)
         => taskStatusChanged.RegisterHandler(handler);

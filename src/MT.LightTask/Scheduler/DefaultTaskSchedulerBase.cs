@@ -35,6 +35,7 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
 
         private static async Task LoadStatusAsync(TScheduler scheduler, CancellationToken cancellationToken)
         {
+            if (!TaskOptions.Instance.EnableStorage) return;
             if (scheduler.Storage is null) return;
             var config = await scheduler.Storage.LoadTaskStatusAsync(scheduler.Name, cancellationToken);
             if (config is not null)
@@ -45,6 +46,7 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
 
         private void StorageStatus(TScheduler scheduler)
         {
+            if (!TaskOptions.Instance.EnableStorage) return;
             if (scheduler.Storage is null) return;
             lock (locker)
             {
