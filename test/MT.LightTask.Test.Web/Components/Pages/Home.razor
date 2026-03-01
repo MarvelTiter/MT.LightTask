@@ -9,26 +9,56 @@ Welcome to your new app.
 
 <button @onclick="@AddTask">添加任务</button>
 <button @onclick="@StateHasChanged">刷新</button>
-
+<button @onclick="@RunSignal">Signal</button>
 <table>
+    <tr>
+        <th>任务名称</th>
+        <th>最后运行时间</th>
+        <th>最后运行耗时</th>
+        <th>状态</th>
+        <th></th>
+    </tr>
     @foreach (var item in Tasks)
     {
         <tr>
             <td>@item.Name</td>
             <td>@item.LastRuntime</td>
             <td>@item.LastRunElapsedTime</td>
+            <td>@item.TaskStatus</td>
+            <td>
+                <button @onclick="@(_ => DeleteTask(item.Name!))">删除</button>
+            </td>
         </tr>
     }
 
 </table>
+<style>
+    table {
+        border-collapse: collapse;
+    }
 
+    th, td {
+        border: 1px solid #ccc;
+        padding: 5px 10px;
+    }
+</style>
 @code {
     private void AddTask()
     {
         // Tc.AddTask<RetryTask>("测试", b => b.WithCron("*/5 * * * * ?").WithRetry(3).WithTimeout(TimeSpan.FromSeconds(1)));
-        Tc.AddTask<RetryTask>("测试1", b => b.WithCron("*/5 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
-        Tc.AddTask<RetryTask>("测试2", b => b.WithInterval(TimeSpan.FromSeconds(15)).WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
+        Tc.AddTask<CronTask>("Cron", b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
+        Tc.AddTask<IntervalTask>("Interval", b => b.WithInterval(TimeSpan.FromSeconds(15)).WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
         // Tc.AddTaskWithContext<TaskWithContext, int>("测试Context", 1, b => b.WithCron("*/5 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)));
+    }
+
+    private void DeleteTask(string name)
+    {
+        Tc.Remove(name);
+    }
+
+    private void RunSignal()
+    {
+        Tc.GetScheduler("Signal")?.RunImmediately();
     }
 
     private IEnumerable<TaskInfo> Tasks => Tc.GetTaskInfos();

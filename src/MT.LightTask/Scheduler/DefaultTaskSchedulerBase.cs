@@ -104,7 +104,8 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
                 try
                 {
                     // 执行任务（包含超时控制）
-                    await ExecuteWithTimeout(cancelCts);
+                    //await ExecuteWithTimeout(cancelCts);
+                    await work(cancelCts.Token).ConfigureAwait(false);
                     // 执行成功，退出重试循环
                     success = true;
                     // 重置重试计数

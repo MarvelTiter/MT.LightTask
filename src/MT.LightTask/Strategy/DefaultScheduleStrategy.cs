@@ -25,8 +25,6 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
     
     public virtual Dictionary<string, object?> SaveData()
     {
-        var dic = RetryWaitStrategy.Serialize();
-        dic["RetryWaitStrategyType"] = RetryWaitStrategy.GetType().AssemblyQualifiedName;
         var data = new Dictionary<string, object?>
         {
             [nameof(StartTime)] = StartTime,
@@ -35,9 +33,7 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
             [nameof(Timeout)] = Timeout,
             [nameof(RetryLimit)] = RetryLimit,
             [nameof(RetryIntervalBase)] = RetryIntervalBase,
-            [nameof(RetryWaitStrategy)] = dic
         };
-
         return data;
     }
 
@@ -66,25 +62,6 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
         if (datas.TryGetValue(nameof(RetryIntervalBase), out var rib) && int.TryParse(rib?.ToString(), out var intervalBase))
         {
             RetryIntervalBase = intervalBase;
-        }
-        if (datas.TryGetValue(nameof(RetryWaitStrategy), out var rws))
-        {
-#pragma warning disable IL3050 // Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-            var dic = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(rws?.ToString() ?? "{}") ?? [];
-#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-#pragma warning restore IL3050 // Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.
-            if (RetryWaitStrategy is null && dic.TryGetValue("RetryWaitStrategyType", out var tn) && tn is not null)
-            {
-#pragma warning disable IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
-                var type = Type.GetType(tn.ToString()!);
-#pragma warning restore IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
-                if (type is not null)
-                {
-                    RetryWaitStrategy = Activator.CreateInstance(type) as IRetryWaitStrategy;
-                }
-            }
-            RetryWaitStrategy?.Deserialize(dic);
         }
     }
 

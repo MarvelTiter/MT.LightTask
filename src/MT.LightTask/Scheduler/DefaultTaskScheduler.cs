@@ -25,17 +25,29 @@ internal sealed class DefaultTaskScheduler : DefaultTaskSchedulerBase<DefaultTas
         async Task work(CancellationToken token)
         {
             Exception = null;
+            CancellationTokenSource? timeoutCts = null;
+            CancellationTokenSource? linkedCts = null;
+
             try
             {
                 await UpdateTaskStatusAsync(Strategy.RetryTimes > 0 ? TaskRunStatus.Retry : TaskRunStatus.Running);
                 var start = Stopwatch.GetTimestamp();
-                await this.task.ExecuteAsync(token).ConfigureAwait(false);
+                await ExecuteWithTimeout(this.task, token);
                 Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
                 await UpdateTaskStatusAsync(TaskRunStatus.Success);
             }
             catch (TaskCanceledException)
             {
-                await UpdateTaskStatusAsync(TaskRunStatus.Canceled);
+                if (timeoutCts?.IsCancellationRequested == true)
+                {
+                    await UpdateTaskStatusAsync(TaskRunStatus.Timeout);
+                    Log($"任务[{Name}] 超时({Strategy.Timeout})");
+                }
+                else
+                {
+                    await UpdateTaskStatusAsync(TaskRunStatus.Canceled);
+                    Log($"任务[{Name}] 取消");
+                }
                 throw;
             }
             catch (Exception ex)
@@ -47,8 +59,24 @@ internal sealed class DefaultTaskScheduler : DefaultTaskSchedulerBase<DefaultTas
             }
             finally
             {
+                timeoutCts?.Dispose();
+                linkedCts?.Dispose();
                 Aop.NotifyTaskCompleted(this);
                 await Aop.NotifyTaskCompletedAsync(this);
+            }
+
+            async Task ExecuteWithTimeout(ITask t, CancellationToken token)
+            {
+                if (Strategy.Timeout.HasValue)
+                {
+                    timeoutCts = new CancellationTokenSource(Strategy.Timeout.Value);
+                    linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutCts.Token);
+                    await t.ExecuteAsync(linkedCts.Token).ConfigureAwait(false);
+                }
+                else
+                {
+                    await t.ExecuteAsync(token).ConfigureAwait(false);
+                }
             }
         }
 

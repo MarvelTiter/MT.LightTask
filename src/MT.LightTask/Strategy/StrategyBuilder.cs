@@ -7,6 +7,8 @@ namespace MT.LightTask;
 
 public sealed class StrategyBuilder : IStrategyBuilder
 {
+    private const string TYPE_KEY = "RetryWaitStrategyType";
+
     public static StrategyBuilder Default => new();
 
     [JsonConverter(typeof(JsonStringEnumConverter<ScheduleType>))]
@@ -19,13 +21,29 @@ public sealed class StrategyBuilder : IStrategyBuilder
     public TimeSpan? Timeout { get; set; }
 
     [JsonIgnore]
-    public IRetryWaitStrategy Strategy { get; set; } = new DefaultRetryWaitDuration();
+    public IRetryWaitStrategy? Strategy { get; set; }
     public Dictionary<string, object?>? CustomRetryStrategy { get; set; }
     [JsonIgnore]
     public bool ShouldStroage { get; set; }
 
     public IScheduleStrategy Build()
     {
+        if (CustomRetryStrategy is not null && Strategy is null)
+        {
+            var datas = CustomRetryStrategy;
+            if (datas.TryGetValue(TYPE_KEY, out var rws))
+            {
+                var typeName = rws?.ToString() ?? throw new ArgumentNullException();
+#pragma warning disable IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
+                var type = System.Type.GetType(typeName);
+                if (type is not null)
+                {
+                    Strategy = Activator.CreateInstance(type) as IRetryWaitStrategy;
+                    Strategy?.Deserialize(CustomRetryStrategy);
+                }
+            }
+        }
+        Strategy ??= new DefaultRetryWaitDuration();
         return Type switch
         {
             ScheduleType.Once => new OnceScheduleStrategy()
@@ -100,7 +118,7 @@ public sealed class StrategyBuilder : IStrategyBuilder
         Retry = times;
         Strategy = new T();
         CustomRetryStrategy = Strategy.Serialize();
-        CustomRetryStrategy["RetryWaitStrategyType"] = typeof(T).AssemblyQualifiedName;
+        CustomRetryStrategy[TYPE_KEY] = typeof(T).AssemblyQualifiedName;
         return this;
     }
 

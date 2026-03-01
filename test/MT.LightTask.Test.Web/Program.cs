@@ -12,14 +12,17 @@ builder.Services.AddLightTask(o =>
 {
     o.EnableStorage = true;
 });
-builder.Services.AddTransient<RetryTask>();
-builder.Services.AddTransient<Task2>();
+builder.Services.AddTransient<IntervalTask>();
+builder.Services.AddTransient<OnceTask>();
+builder.Services.AddTransient<SignalTask>();
+builder.Services.AddTransient<CronTask>();
 
 var app = builder.Build();
 
 app.UseLightTask(tc =>
 {
-    tc.AddTask<Task2>("测试3", "*/12 * * * * ?");
+    tc.AddTask<OnceTask>("Once", b => b.Once(DateTimeOffset.Now.AddSeconds(10)));
+    tc.AddTask<SignalTask>("Signal", b => b.WithSignal());
 });
 
 // Configure the HTTP request pipeline.
