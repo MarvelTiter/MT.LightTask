@@ -18,7 +18,7 @@ app.UseLightTask(c =>
     }, b => b.WithCron("*/12 * * * * ?"));
 
     // TestTask需要实现ITask，并且注册到容器中
-    c.AddTask<TestTask>("测试2", b => b.WithCron("*/5 * * * * ?").Build());
+    c.AddTask<TestTask>("测试2", b => b.WithCron("*/5 * * * * ?"));
 });
 
 // TestTask

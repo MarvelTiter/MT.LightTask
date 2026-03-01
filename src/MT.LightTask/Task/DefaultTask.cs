@@ -11,6 +11,7 @@ class DefaultTask(Func<IServiceProvider, CancellationToken, Task> task, IService
     public Task ExecuteAsync(CancellationToken cancellationToken = default) => task.Invoke(serviceProvider, cancellationToken);
 }
 
+[Obsolete]
 class DefaultTask<TContext>(Func<IServiceProvider, TContext, CancellationToken, Task> task, IServiceProvider serviceProvider) : ITask<TContext>
 {
     public Task ExecuteAsync(TContext context, CancellationToken cancellationToken = default) => task.Invoke(serviceProvider, context, cancellationToken);
