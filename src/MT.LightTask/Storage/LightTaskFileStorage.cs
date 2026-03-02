@@ -1,10 +1,17 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 
 namespace MT.LightTask.Storage;
 
-public class LightTaskFileStorage(string filePath) : ILightTaskStorage
+public class LightTaskFileStorage : ILightTaskStorage
 {
+    private readonly string filePath;
+
+    public LightTaskFileStorage()
+    {
+        filePath = TaskOptions.Instance.StoragePath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lighttasks.json");
+    }
+
     public async Task LoadTasksAsync(ITaskCenter tc, CancellationToken cancellationToken)
     {
         var files = RetrieveSchedulers();
@@ -20,13 +27,26 @@ public class LightTaskFileStorage(string filePath) : ILightTaskStorage
             if (taskType is not null)
             {
                 var strategy = config.Builder?.Build();
-                //strategy.LoadData(config.Values);
-                var ti = (ITask)tc.ServiceProvider.GetRequiredService(taskType);
-                tc.AddTask(config.Name, ti, strategy);
+
+                if (taskType == typeof(DefaultTask))
+                {
+                    var handler = RestoreDelegateTask(config.Name);
+                    if (handler is not null)
+                    {
+                        tc.AddTask(config.Name, new DefaultTask(handler, tc.ServiceProvider), strategy);
+                    }
+                }
+                else
+                {
+                    //strategy.LoadData(config.Values);
+                    var ti = (ITask)tc.ServiceProvider.GetRequiredService(taskType);
+                    tc.AddTask(config.Name, ti, strategy);
+                }
             }
         }
     }
 
+    public virtual Func<IServiceProvider, CancellationToken, Task>? RestoreDelegateTask(string name) => null;
 
     public void SaveTaskConfig(TaskConfig config)
     {
@@ -86,4 +106,6 @@ public class LightTaskFileStorage(string filePath) : ILightTaskStorage
         if (File.Exists(file1)) File.Delete(file1);
         if (File.Exists(file2)) File.Delete(file2);
     }
+
+
 }

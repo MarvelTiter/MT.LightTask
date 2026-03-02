@@ -9,7 +9,10 @@ public interface ILightTaskStorage
     void SaveTaskConfig(TaskConfig config);
 
     Task<TaskStatus?> LoadTaskStatusAsync(string name, CancellationToken cancellationToken);
+
     void SaveTaskStatus(string name, TaskStatus config);
+
+    Func<IServiceProvider, CancellationToken, Task>? RestoreDelegateTask(string name);
 
     void RemoveTaskStorage(string name);
 }

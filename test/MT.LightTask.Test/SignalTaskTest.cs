@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MT.LightTask.Test;
@@ -27,7 +27,7 @@ public sealed class SignalTaskTest
         var provider = services.BuildServiceProvider();
         var tc = provider.GetRequiredService<ITaskCenter>();
         var now = DateTimeOffset.Now;
-        tc.AddTask<SignalTask>("测试", b => b.WithSignal().Build());
+        tc.AddTask<SignalTask>("测试", b => b.WithSignal());
         // 测试任务
         var task = tc.GetScheduler("测试");
         var runSuccess = task.RunImmediately();
@@ -51,7 +51,7 @@ public sealed class SignalTaskTest
         var provider = services.BuildServiceProvider();
         var tc = provider.GetRequiredService<ITaskCenter>();
         var now = DateTimeOffset.Now;
-        tc.AddTask<SignalTask>("测试", b => b.WithSignal().Build());
+        tc.AddTask<SignalTask>("测试", b => b.WithSignal());
         // 测试任务
         var task = tc.GetScheduler("测试");
         int successCount = 0;

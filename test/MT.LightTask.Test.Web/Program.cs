@@ -1,4 +1,5 @@
-using MT.LightTask;
+﻿using MT.LightTask;
+using MT.LightTask.Storage;
 using MT.LightTask.Test.Web.Components;
 using MT.LightTask.Test.Web.Tasks;
 
@@ -12,6 +13,7 @@ builder.Services.AddLightTask(o =>
 {
     o.EnableStorage = true;
 });
+builder.Services.AddSingleton<ILightTaskStorage, JsonTaskStorageExtension>();
 builder.Services.AddTransient<IntervalTask>();
 builder.Services.AddTransient<OnceTask>();
 builder.Services.AddTransient<SignalTask>();
@@ -21,8 +23,8 @@ var app = builder.Build();
 
 app.UseLightTask(tc =>
 {
-    tc.AddTask<OnceTask>("Once", b => b.Once(DateTimeOffset.Now.AddSeconds(10)));
-    tc.AddTask<SignalTask>("Signal", b => b.WithSignal());
+    //tc.AddTask<OnceTask>("Once", b => b.Once(DateTimeOffset.Now.AddSeconds(10)));
+    //tc.AddTask<SignalTask>("Signal", b => b.WithSignal());
 });
 
 // Configure the HTTP request pipeline.

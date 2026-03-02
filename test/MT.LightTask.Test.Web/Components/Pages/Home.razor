@@ -45,12 +45,18 @@ Welcome to your new app.
 @code {
     private void AddTask()
     {
-        // Tc.AddTask<RetryTask>("测试", b => b.WithCron("*/5 * * * * ?").WithRetry(3).WithTimeout(TimeSpan.FromSeconds(1)));
-        Tc.AddTask<CronTask>("Cron", b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
-        Tc.AddTask<IntervalTask>("Interval", b => b.WithInterval(TimeSpan.FromSeconds(15)).WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
-        // Tc.AddTaskWithContext<TaskWithContext, int>("测试Context", 1, b => b.WithCron("*/5 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)));
-    }
+        // Tc.AddTask<CronTask>("Cron", b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
+        // Tc.AddTask<IntervalTask>("Interval", b => b.WithInterval(TimeSpan.FromSeconds(15)).WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
+        Tc.AddTask("匿名委托", (s, t) =>
+        {
+            return Task.CompletedTask;
+        }, 
+        b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
 
+        Tc.AddTask("静态方法", JsonTaskStorageExtension.Handler,
+        b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
+    }
+    
     private void DeleteTask(string name)
     {
         Tc.Remove(name);
