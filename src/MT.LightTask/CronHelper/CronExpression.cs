@@ -499,7 +499,7 @@ public partial class CronExpression
         end = end == -1 ? max : end;
         for (int i = start; i <= end; i++)
         {
-            if (i % step == 0)
+            if ((i - start) % step == 0)
             {
                 store.Targets.Add(i);
             }

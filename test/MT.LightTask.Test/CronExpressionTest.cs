@@ -63,4 +63,12 @@ public sealed class CronExpressionTest
         Assert.AreEqual(true, cron.DayOfWeeks.AllSpec);
         Debug.WriteLine(cron);
     }
+
+    [TestMethod]
+    public void Test_Rang_Step()
+    {
+        var expression = "0 30 7-19/2 * * ?";
+        var cron = CronExpression.Parse(expression);
+
+    }
 }
