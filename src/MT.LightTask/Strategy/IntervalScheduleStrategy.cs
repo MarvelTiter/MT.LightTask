@@ -24,7 +24,7 @@ internal class IntervalScheduleStrategy(TimeSpan interval) : DefaultScheduleStra
 
         void Set()
         {
-            LastRuntime = DateTimeOffset.Now;
+            //LastRuntime = DateTimeOffset.Now;
             NextRuntime = DateTimeOffset.Now + Interval;
         }
     }

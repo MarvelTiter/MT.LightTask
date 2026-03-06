@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MT.LightTask;
 
+[Obsolete]
 internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITaskScheduler
     where TScheduler : ITaskScheduler
 {
@@ -16,7 +17,7 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
     [NotNull] public TaskCenter? Aop { get; set; }
     public ILightTaskStorage? Storage { get; set; }
     public Exception? Exception { get; set; }
-    public TaskRunStatus TaskStatus { get; set; }
+    public TaskRunStatus TaskStatus { get => Strategy.RunStatus; set => Strategy.RunStatus = value; }
     public TaskScheduleStatus ScheduleStatus { get; set; }
     public abstract object? Context { get; }
     public abstract string TaskTypeName { get; }
@@ -124,22 +125,6 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
             }
         }
 
-        /// <summary>
-        /// 执行任务，支持超时控制
-        /// </summary>
-        private async Task ExecuteWithTimeout(CancellationTokenSource cancelCts)
-        {
-            if (scheduler.Strategy.Timeout.HasValue)
-            {
-                using var timeoutCts = new CancellationTokenSource(scheduler.Strategy.Timeout.Value);
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancelCts.Token, timeoutCts.Token);
-                await work(linkedCts.Token).ConfigureAwait(false);
-            }
-            else
-            {
-                await work(cancelCts.Token).ConfigureAwait(false);
-            }
-        }
 
         public bool Run()
         {
@@ -216,10 +201,11 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
     public void Stop()
     {
         schedulerTokenSource?.Cancel();
-        ScheduleStatus = TaskScheduleStatus.Ready;
+        ScheduleStatus = TaskScheduleStatus.Disabled;
         Aop.NotifyTaskScheduleChanged(this);
         _ = Aop.NotifyTaskScheduleChangedAsync(this);
     }
+
     protected virtual void Dispose(bool disposing)
     {
         if (!disposedValue)

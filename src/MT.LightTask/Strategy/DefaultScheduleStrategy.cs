@@ -1,7 +1,7 @@
-﻿using MT.LightTask.Storage;
-using MT.LightTask.Strategy;
+﻿using MT.LightTask.Strategy;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace MT.LightTask;
 
@@ -20,9 +20,12 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
     public int RetryIntervalBase { get; set; }
     public Func<int, TimeSpan>? WaitDurationProvider { get; set; }
     [NotNull] public IRetryWaitStrategy? RetryWaitStrategy { get; set; }
-   
+
+    [JsonConverter(typeof(JsonStringEnumConverter<TaskRunStatus>))]
+    public TaskRunStatus RunStatus { get; set; }
+
     public abstract bool WaitForExecute(CancellationToken cancellationToken);
-    
+
     public virtual Dictionary<string, object?> SaveData()
     {
         var data = new Dictionary<string, object?>
@@ -33,6 +36,7 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
             [nameof(Timeout)] = Timeout,
             [nameof(RetryLimit)] = RetryLimit,
             [nameof(RetryIntervalBase)] = RetryIntervalBase,
+            [nameof(RunStatus)] = (int)RunStatus,
         };
         return data;
     }
@@ -62,6 +66,10 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
         if (datas.TryGetValue(nameof(RetryIntervalBase), out var rib) && int.TryParse(rib?.ToString(), out var intervalBase))
         {
             RetryIntervalBase = intervalBase;
+        }
+        if (datas.TryGetValue(nameof(RunStatus), out var rs) && int.TryParse(rs?.ToString(), out var ei))
+        {
+            RunStatus = (TaskRunStatus)ei;
         }
     }
 

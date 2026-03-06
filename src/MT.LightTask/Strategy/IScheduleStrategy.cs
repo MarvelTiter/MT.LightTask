@@ -64,6 +64,8 @@ public interface IScheduleStrategy
     int RetryTimes { get; internal set; }
     bool WaitForExecute(CancellationToken cancellationToken);
 
+    TaskRunStatus RunStatus { get; set; }
+
     Dictionary<string, object?> SaveData();
 
     void LoadData(Dictionary<string, object?> datas);
@@ -90,8 +92,8 @@ public enum TaskRunStatus
 
 public enum TaskScheduleStatus
 {
-    [Display(Name = "就绪")]
-    Ready,
     [Display(Name = "运行中")]
     Running,
+    [Display(Name = "停用")]
+    Disabled
 }

@@ -18,7 +18,7 @@ internal class OnceScheduleStrategy : DefaultScheduleStrategy
         var wait = StartTime.HasValue ? StartTime.Value - DateTimeOffset.Now : TimeSpan.Zero;
         //var reciveCancelSignal = cancellationToken.WaitHandle.WaitOne(wait);
         var reciveCancelSignal = Wait(wait, cancellationToken);
-        LastRuntime = DateTimeOffset.Now;
+        //LastRuntime = DateTimeOffset.Now;
         NextRuntime = null;
         return !reciveCancelSignal;
     }

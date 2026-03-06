@@ -46,7 +46,7 @@ public class TaskCenter : ITaskCenter//, ITaskAopNotify
             return scheduler;
         });
         strategy ??= StrategyBuilder.Default.Once(DateTimeOffset.Now.AddSeconds(1)).Build();
-        scheduler.InternalStart(task, strategy);
+        scheduler.StartTask(task, strategy);
         return this;
     }
 
@@ -65,7 +65,7 @@ public class TaskCenter : ITaskCenter//, ITaskAopNotify
         //strategy ??= StrategyBuilder.Default.Once(DateTimeOffset.Now.AddSeconds(1)).Build();
         var b = StrategyBuilder.Default;
         builder.Invoke(b);
-        scheduler.InternalStart(task, b.Build());
+        scheduler.StartTask(task, b.Build());
         if (b.ShouldStroage && storage is not null && TaskOptions.Instance.EnableStorage)
         {
             var config = new TaskConfig()
@@ -101,7 +101,6 @@ public class TaskCenter : ITaskCenter//, ITaskAopNotify
     public bool Remove(string schedulerName)
     {
         var b = tasks.TryRemove(schedulerName, out var scheduler);
-        scheduler?.Stop();
         scheduler?.Dispose();
         storage?.RemoveTaskStorage(schedulerName);
         return b;
@@ -121,7 +120,6 @@ public class TaskCenter : ITaskCenter//, ITaskAopNotify
             {
                 break;
             }
-            item.Stop();
             item.Dispose();
         }
     }

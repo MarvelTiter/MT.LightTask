@@ -13,20 +13,27 @@ Welcome to your new app.
 <table>
     <tr>
         <th>任务名称</th>
+        <th>下次运行时间</th>
         <th>最后运行时间</th>
         <th>最后运行耗时</th>
-        <th>状态</th>
+        <th>调度状态</th>
+        <th>任务状态</th>
         <th></th>
     </tr>
     @foreach (var item in Tasks)
     {
         <tr>
             <td>@item.Name</td>
+            <td>@item.NextRuntime</td>
             <td>@item.LastRuntime</td>
             <td>@item.LastRunElapsedTime</td>
+            <td>@item.ScheduleStatus</td>
             <td>@item.TaskStatus</td>
             <td>
                 <button @onclick="@(_ => DeleteTask(item.Name!))">删除</button>
+                <button @onclick="@(_ => ToggleStatus(item.Name!))">
+                    @(item.ScheduleStatus == TaskScheduleStatus.Running ? "禁用" : "启用")
+                </button>
             </td>
         </tr>
     }
@@ -45,23 +52,33 @@ Welcome to your new app.
 @code {
     private void AddTask()
     {
-        // Tc.AddTask<CronTask>("Cron", b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
-        // Tc.AddTask<IntervalTask>("Interval", b => b.WithInterval(TimeSpan.FromSeconds(15)).WithRetry(10).WithTimeout(TimeSpan.FromSeconds(5)).Storage());
         Tc.AddTask("匿名委托", (s, t) =>
         {
             return Task.CompletedTask;
-        }, 
-        b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
+        },
+        b => b.WithInterval(TimeSpan.FromSeconds(5)).WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
 
         Tc.AddTask("静态方法", JsonTaskStorageExtension.Handler,
-        b => b.WithCron("*/30 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
+        b => b.WithCron("*/5 * * * * ?").WithRetry(10).WithTimeout(TimeSpan.FromSeconds(2)).Storage());
     }
-    
+
     private void DeleteTask(string name)
     {
         Tc.Remove(name);
     }
-
+    private void ToggleStatus(string name)
+    {
+        var schedule = Tc.GetScheduler(name);
+        if (schedule is null) return;
+        if (schedule.ScheduleStatus == TaskScheduleStatus.Running)
+        {
+            schedule.Stop();
+        }
+        else
+        {
+            schedule.Start();
+        }
+    }
     private void RunSignal()
     {
         Tc.GetScheduler("Signal")?.RunImmediately();

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -19,13 +19,12 @@ public class TaskConfig
     public string Name { get; set; } = string.Empty;
     public string TaskTypeName { get; set; } = string.Empty;
 
-    //[JsonConverter(typeof(JsonStringEnumConverter<ScheduleType>))]
-    //public ScheduleType Type { get; set; }
-    //public string? Args { get; set; }
     public StrategyBuilder? Builder { get; set; }
 }
 
 public class TaskStatus
 {
+    [JsonConverter(typeof(JsonStringEnumConverter<TaskScheduleStatus>))]
+    public TaskScheduleStatus ScheduleStatus { get; set; }
     public Dictionary<string, object?> Values { get; set; } = [];
 }

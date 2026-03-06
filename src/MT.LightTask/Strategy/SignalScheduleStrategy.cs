@@ -10,7 +10,7 @@ internal class SignalScheduleStrategy : DefaultScheduleStrategy
     public override bool WaitForExecute(CancellationToken cancellationToken)
     {
         var signal = !cancellationToken.WaitHandle.WaitOne();
-        LastRuntime = DateTimeOffset.Now;
+        //LastRuntime = DateTimeOffset.Now;
         return signal;
     }
 }
