@@ -98,7 +98,7 @@ internal sealed class DefaultTaskScheduler : ITaskScheduler
             InternalStart();
         }
     }
-    
+
     private async Task LoadStatusAsync(CancellationToken cancellationToken)
     {
         if (!TaskOptions.Instance.EnableStorage) return;
@@ -246,13 +246,14 @@ internal sealed class DefaultTaskScheduler : ITaskScheduler
         }
     }
 
-    public bool RunImmediately()
+    public void RunImmediately()
     {
         if (ScheduleStatus != TaskScheduleStatus.Running)
-            return false;
+            return;
         if (TaskStatus == TaskRunStatus.Running)
-            return false;
-        return runner?.Run() ?? false;
+            return;
+        runner?.Run();
+
     }
     private Task UpdateTaskStatusAsync(TaskRunStatus taskRunStatus)
     {

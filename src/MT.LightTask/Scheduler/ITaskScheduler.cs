@@ -45,7 +45,7 @@ public interface ITaskScheduler : IDisposable
     /// 如果调度器正在运行，跳过等待时间，立即执行
     /// </summary>
     /// <returns>成功/失败</returns>
-    bool RunImmediately();
+    void RunImmediately();
 
     /// <summary>
     /// 启动调度器

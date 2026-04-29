@@ -169,13 +169,13 @@ internal abstract class DefaultTaskSchedulerBase<TScheduler>(string name) : ITas
         }
     }
 
-    public bool RunImmediately()
+    public void RunImmediately()
     {
         if (ScheduleStatus != TaskScheduleStatus.Running)
-            return false;
+            return ;
         if (TaskStatus == TaskRunStatus.Running)
-            return false;
-        return runner?.Run() ?? false;
+            return ;
+        runner?.Run() ;
     }
     protected Task UpdateTaskStatusAsync(TaskRunStatus taskRunStatus)
     {

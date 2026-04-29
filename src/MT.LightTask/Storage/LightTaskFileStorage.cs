@@ -17,31 +17,43 @@ public class LightTaskFileStorage : ILightTaskStorage
         var files = RetrieveSchedulers();
         foreach (var fileName in files)
         {
-            var json = await File.ReadAllTextAsync(fileName, cancellationToken);
-            var config = JsonSerializer.Deserialize(json, JsonContext.Default.TaskConfig);
-            if (config is null) continue;
+            try
+            {
+                var json = await File.ReadAllTextAsync(fileName, cancellationToken);
+                var config = JsonSerializer.Deserialize(json, JsonContext.Default.TaskConfig);
+                if (config is null) continue;
 
 #pragma warning disable IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
-            var taskType = Type.GetType(config.TaskTypeName);
+                var taskType = Type.GetType(config.TaskTypeName);
 #pragma warning restore IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
-            if (taskType is not null)
-            {
-                var strategy = config.Builder?.Build();
-
-                if (taskType == typeof(DefaultTask))
+                if (taskType is not null)
                 {
-                    var handler = RestoreDelegateTask(config.Name);
-                    if (handler is not null)
+                    var strategy = config.Builder?.Build();
+
+                    if (taskType == typeof(DefaultTask))
                     {
-                        tc.AddTask(config.Name, new DefaultTask(handler, tc.ServiceProvider), strategy);
+                        var handler = RestoreDelegateTask(config.Name);
+                        if (handler is not null)
+                        {
+                            tc.AddTask(config.Name, new DefaultTask(handler, tc.ServiceProvider), strategy);
+                        }
+                    }
+                    else
+                    {
+                        //strategy.LoadData(config.Values);
+                        var ti = (ITask)tc.ServiceProvider.GetRequiredService(taskType);
+                        tc.AddTask(config.Name, ti, strategy);
                     }
                 }
-                else
-                {
-                    //strategy.LoadData(config.Values);
-                    var ti = (ITask)tc.ServiceProvider.GetRequiredService(taskType);
-                    tc.AddTask(config.Name, ti, strategy);
-                }
+            }
+            catch (JsonException)
+            {
+                tc.Log($"{fileName}加载失败");
+                continue;
+            }
+            catch (Exception)
+            {
+                throw;
             }
         }
     }
@@ -70,7 +82,19 @@ public class LightTaskFileStorage : ILightTaskStorage
         if (File.Exists(fileName))
         {
             var config = await File.ReadAllTextAsync(fileName, cancellationToken);
-            return JsonSerializer.Deserialize(config, JsonContext.Default.TaskStatus); ;
+            try
+            {
+                return JsonSerializer.Deserialize(config, JsonContext.Default.TaskStatus);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
         return null;
     }
@@ -78,15 +102,18 @@ public class LightTaskFileStorage : ILightTaskStorage
 
     public void SaveTaskStatus(string name, TaskStatus config)
     {
+        var fileName = Path.Combine(filePath, $"{name}.sbin");
+        var tempFile = Path.Combine(filePath, $"{name}.tmp");
         try
         {
             var json = JsonSerializer.Serialize(config, JsonContext.Default.TaskStatus);
-            var fileName = Path.Combine(filePath, $"{name}.sbin");
-            File.WriteAllText(fileName, json);
+            File.WriteAllText(tempFile, json);
+            File.Move(tempFile, fileName, true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            throw;
+            try { if (File.Exists(tempFile)) File.Delete(tempFile); } catch { }
+            throw new InvalidOperationException($"保存任务状态失败: {name}", ex);
         }
     }
 
