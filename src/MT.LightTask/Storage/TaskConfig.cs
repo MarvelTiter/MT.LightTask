@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace MT.LightTask.Storage;
 
@@ -24,7 +23,9 @@ public class TaskConfig
 
 public class TaskStatus
 {
-    [JsonConverter(typeof(JsonStringEnumConverter<TaskScheduleStatus>))]
+#if NET8_0_OR_GREATER
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<TaskScheduleStatus>))]
+#endif
     public TaskScheduleStatus ScheduleStatus { get; set; }
     public Dictionary<string, object?> Values { get; set; } = [];
 }

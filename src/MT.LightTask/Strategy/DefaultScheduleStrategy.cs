@@ -1,7 +1,6 @@
 ﻿using MT.LightTask.Strategy;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 
 namespace MT.LightTask;
 
@@ -21,7 +20,9 @@ internal abstract class DefaultScheduleStrategy : IScheduleStrategy
     public Func<int, TimeSpan>? WaitDurationProvider { get; set; }
     [NotNull] public IRetryWaitStrategy? RetryWaitStrategy { get; set; }
 
-    [JsonConverter(typeof(JsonStringEnumConverter<TaskRunStatus>))]
+#if NET8_0_OR_GREATER
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<TaskRunStatus>))]
+#endif
     public TaskRunStatus RunStatus { get; set; }
 
     public abstract bool WaitForExecute(CancellationToken cancellationToken);

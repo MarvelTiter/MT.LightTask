@@ -1,9 +1,27 @@
 ﻿using MT.LightTask.Storage;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace MT.LightTask;
 
+file class StopwatchHelper
+{
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long GetTimestamp() => Stopwatch.GetTimestamp();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TimeSpan GetElapsedTime(long startingTimestamp)
+    {
+#if NET8_0_OR_GREATER
+        return Stopwatch.GetElapsedTime(startingTimestamp);
+#else
+        var end = Stopwatch.GetTimestamp();
+        var tickFrequency = (double)(10000 * 1000 / Stopwatch.Frequency);
+        var tick = (end - startingTimestamp) * tickFrequency;
+        return new TimeSpan((long)tick);
+#endif
+    }
+}
 internal sealed class DefaultTaskScheduler : ITaskScheduler
 {
     private ITask? task;
@@ -42,9 +60,9 @@ internal sealed class DefaultTaskScheduler : ITaskScheduler
             try
             {
                 await UpdateTaskStatusAsync(Strategy.RetryTimes > 0 ? TaskRunStatus.Retry : TaskRunStatus.Running);
-                var start = Stopwatch.GetTimestamp();
+                var start = StopwatchHelper.GetTimestamp();
                 await ExecuteWithTimeout(this.task, token);
-                Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
+                Strategy.LastRunElapsedTime = StopwatchHelper.GetElapsedTime(start);
                 await UpdateTaskStatusAsync(TaskRunStatus.Success);
             }
             catch (TaskCanceledException)

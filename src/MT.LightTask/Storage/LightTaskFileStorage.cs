@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json;
 
 namespace MT.LightTask.Storage;
 
@@ -19,8 +18,16 @@ public class LightTaskFileStorage : ILightTaskStorage
         {
             try
             {
+#if NET8_0_OR_GREATER
                 var json = await File.ReadAllTextAsync(fileName, cancellationToken);
-                var config = JsonSerializer.Deserialize(json, JsonContext.Default.TaskConfig);
+#else
+                var json = File.ReadAllText(fileName);
+#endif
+#if NET8_0_OR_GREATER
+                var config = System.Text.Json.JsonSerializer.Deserialize(json, JsonContext.Default.TaskConfig);
+#else
+                var config = Newtonsoft.Json.JsonConvert.DeserializeObject<TaskConfig>(json);
+#endif
                 if (config is null) continue;
 
 #pragma warning disable IL2057 // Unrecognized value passed to the parameter of method. It's not possible to guarantee the availability of the target type.
@@ -46,7 +53,11 @@ public class LightTaskFileStorage : ILightTaskStorage
                     }
                 }
             }
-            catch (JsonException)
+#if NET8_0_OR_GREATER
+            catch (System.Text.Json.JsonException)
+#else 
+            catch (Newtonsoft.Json.JsonException)
+#endif
             {
                 tc.Log($"{fileName}加载失败");
                 continue;
@@ -65,7 +76,11 @@ public class LightTaskFileStorage : ILightTaskStorage
         try
         {
             //var dic = scheduler.Strategy.SaveData();
-            var json = JsonSerializer.Serialize(config, JsonContext.Default.TaskConfig);
+#if NET8_0_OR_GREATER
+            var json = System.Text.Json.JsonSerializer.Serialize(config, JsonContext.Default.TaskConfig);
+#else
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(config);
+#endif
             var fileName = Path.Combine(filePath, $"{config.Name}.bin");
             File.WriteAllText(fileName, json);
         }
@@ -81,12 +96,23 @@ public class LightTaskFileStorage : ILightTaskStorage
         var fileName = Path.Combine(filePath, $"{name}.sbin");
         if (File.Exists(fileName))
         {
+#if NET8_0_OR_GREATER
             var config = await File.ReadAllTextAsync(fileName, cancellationToken);
+#else
+            var config = File.ReadAllText(fileName);
+#endif
             try
             {
-                return JsonSerializer.Deserialize(config, JsonContext.Default.TaskStatus);
+#if NET8_0_OR_GREATER
+                return System.Text.Json.JsonSerializer.Deserialize(config, JsonContext.Default.TaskStatus);
+#else
+#endif
             }
-            catch (JsonException)
+#if NET8_0_OR_GREATER
+            catch (System.Text.Json.JsonException)
+#else
+            catch(Newtonsoft.Json.JsonException)
+#endif
             {
                 return null;
             }
@@ -106,9 +132,17 @@ public class LightTaskFileStorage : ILightTaskStorage
         var tempFile = Path.Combine(filePath, $"{name}.tmp");
         try
         {
-            var json = JsonSerializer.Serialize(config, JsonContext.Default.TaskStatus);
+#if NET8_0_OR_GREATER
+            var json = System.Text.Json.JsonSerializer.Serialize(config, JsonContext.Default.TaskStatus);
+#else
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(config);
+#endif
             File.WriteAllText(tempFile, json);
+#if NET8_0_OR_GREATER
             File.Move(tempFile, fileName, true);
+#else
+            File.Move(tempFile, fileName);
+#endif
         }
         catch (Exception ex)
         {

@@ -1,146 +1,8 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace MT.LightTask;
-///// <summary>
-///// 异步事件处理器
-///// </summary>
-//internal class AsyncHandlerManager
-//{
-//    private readonly List<Func<Task>> handlers = [];
-//    private CancellationTokenSource? cancellationTokenSource;
-
-//    public IDisposable RegisterHandler(Func<Task> handler)
-//    {
-//        handlers.Add(handler);
-//        return new HandlerRegistration(handler, this);
-//    }
-
-//    public async Task NotifyInvokeHandlers()
-//    {
-//        if (cancellationTokenSource is not null)
-//            await cancellationTokenSource.CancelAsync();
-//        cancellationTokenSource = null;
-
-//        var handlerCount = handlers.Count;
-
-//        if (handlerCount == 0)
-//        {
-//            return;
-//        }
-
-//        var cts = new CancellationTokenSource();
-
-//        cancellationTokenSource = cts;
-
-//        var cancellationToken = cts.Token;
-
-//        try
-//        {
-//            if (handlerCount == 1)
-//            {
-//                var handlerTask = InvokeHandlerAsync(handlers[0]);
-
-//                if (handlerTask.IsFaulted)
-//                {
-//                    await handlerTask;
-//                    return; // Unreachable because the previous line will throw.
-//                }
-
-//                if (!handlerTask.IsCompletedSuccessfully)
-//                {
-//                    await handlerTask.WaitAsync(cancellationToken);
-//                }
-//            }
-//            else
-//            {
-//                var handlersCopy = ArrayPool<Func<Task>>.Shared.Rent(handlerCount);
-//                try
-//                {
-//                    handlers.CopyTo(handlersCopy);
-//                    var tasks = new HashSet<Task>();
-//                    for (var i = 0; i < handlerCount; i++)
-//                    {
-//                        var handlerTask = InvokeHandlerAsync(handlersCopy[i]);
-//                        if (handlerTask.IsFaulted)
-//                        {
-//                            await handlerTask;
-//                            return; // Unreachable because the previous line will throw.
-//                        }
-
-//                        tasks.Add(handlerTask);
-//                    }
-
-//                    while (tasks.Count != 0)
-//                    {
-//                        var completedHandlerTask = await Task.WhenAny(tasks).WaitAsync(cancellationToken);
-
-//                        if (completedHandlerTask.IsFaulted)
-//                        {
-//                            await completedHandlerTask;
-//                            return; // Unreachable because the previous line will throw.
-//                        }
-
-//                        tasks.Remove(completedHandlerTask);
-                        
-//                    }
-//                }
-//                finally
-//                {
-//                    ArrayPool<Func<Task>>.Shared.Return(handlersCopy);
-//                }
-//            }
-//        }
-//        catch (TaskCanceledException ex)
-//        {
-//            if (ex.CancellationToken == cancellationToken)
-//            {
-//                // This navigation was in progress when a successive navigation occurred.
-//                // We treat this as a canceled navigation.
-//                return;
-//            }
-
-//            throw;
-//        }
-//        finally
-//        {
-//            await cts.CancelAsync();
-//            cts.Dispose();
-
-//            if (cancellationTokenSource == cts)
-//            {
-//                cancellationTokenSource = null;
-//            }
-//        }
-//    }
-
-//    private static async Task InvokeHandlerAsync(Func<Task> handler)
-//    {
-//        try
-//        {
-//             await handler();
-//        }
-//        catch (OperationCanceledException)
-//        {
-//            // Ignore exceptions caused by cancellations.
-//        }
-//    }
-
-//    private void RemoveRegistration(Func<Task> handler)
-//    {
-//        handlers.Remove(handler);
-//        Debug.WriteLine("handler had remove");
-//    }
-
-//    private sealed class HandlerRegistration(Func<Task> handler, AsyncHandlerManager manager) : IDisposable
-//    {
-//        public void Dispose()
-//        {
-//            Debug.WriteLine("HandlerRegistration Disposing");
-//            manager.RemoveRegistration(handler);
-//        }
-//    }
-//}
 /// <summary>
 /// 异步事件处理器
 /// </summary>
@@ -156,10 +18,20 @@ public class AsyncHandlerManager<TArg>
         return new HandlerRegistration(handler, this);
     }
 
+    private Task TryCancelTokenSource(CancellationTokenSource? source)
+    {
+#if NET8_0_OR_GREATER
+            if (source is not null)
+                return source.CancelAsync();
+#else
+        source?.Cancel();
+#endif
+        return Task.CompletedTask;
+    }
+
     public async Task NotifyInvokeHandlers(TArg arg)
     {
-        if (cancellationTokenSource is not null)
-            await cancellationTokenSource.CancelAsync();
+        await TryCancelTokenSource(cancellationTokenSource);
         cancellationTokenSource = null;
 
         var handlerCount = handlers.Count;
@@ -186,11 +58,17 @@ public class AsyncHandlerManager<TArg>
                     await handlerTask;
                     return; // Unreachable because the previous line will throw.
                 }
-
+#if NET8_0_OR_GREATER
                 if (!handlerTask.IsCompletedSuccessfully)
                 {
                     await handlerTask.WaitAsync(cancellationToken);
                 }
+#else
+                if (!handlerTask.IsCompleted)
+                {
+                    handlerTask.Wait(cancellationToken);
+                }
+#endif
             }
             else
             {
@@ -213,8 +91,11 @@ public class AsyncHandlerManager<TArg>
 
                     while (tasks.Count != 0)
                     {
+#if NET8_0_OR_GREATER
                         var completedHandlerTask = await Task.WhenAny(tasks).WaitAsync(cancellationToken);
-
+#else
+                        var completedHandlerTask = await Task.WhenAny(tasks);
+#endif
                         if (completedHandlerTask.IsFaulted)
                         {
                             await completedHandlerTask;
@@ -222,7 +103,7 @@ public class AsyncHandlerManager<TArg>
                         }
 
                         tasks.Remove(completedHandlerTask);
-                        
+
                     }
                 }
                 finally
@@ -244,7 +125,7 @@ public class AsyncHandlerManager<TArg>
         }
         finally
         {
-            await cts.CancelAsync();
+            await TryCancelTokenSource(cts);
             cts.Dispose();
 
             if (cancellationTokenSource == cts)
@@ -258,7 +139,7 @@ public class AsyncHandlerManager<TArg>
     {
         try
         {
-             await handler(arg);
+            await handler(arg);
         }
         catch (OperationCanceledException)
         {

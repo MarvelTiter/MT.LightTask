@@ -51,9 +51,9 @@ internal sealed class DefaultTaskSchedulerWithContext<TContext> : DefaultTaskSch
             try
             {
                 await UpdateTaskStatusAsync(Strategy.RetryTimes > 0 ? TaskRunStatus.Retry : TaskRunStatus.Running);
-                var start = Stopwatch.GetTimestamp();
+                //var start = Stopwatch.GetTimestamp();
                 await this.task.ExecuteAsync(this.context, token).ConfigureAwait(false);
-                Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
+                //Strategy.LastRunElapsedTime = Stopwatch.GetElapsedTime(start);
                 await UpdateTaskStatusAsync(TaskRunStatus.Success);
                 // reset
             }

@@ -1,7 +1,5 @@
 ﻿using MT.LightTask.Storage;
 using MT.LightTask.Strategy;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace MT.LightTask;
 
@@ -10,8 +8,9 @@ public sealed class StrategyBuilder : IStrategyBuilder
     private const string TYPE_KEY = "RetryWaitStrategyType";
 
     public static StrategyBuilder Default => new();
-
-    [JsonConverter(typeof(JsonStringEnumConverter<ScheduleType>))]
+#if NET8_0_OR_GREATER
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ScheduleType>))]
+#endif
     public ScheduleType Type { get; set; }
     public DateTimeOffset? Start { get; set; }
     public string? Cron { get; set; }
@@ -19,11 +18,18 @@ public sealed class StrategyBuilder : IStrategyBuilder
     public TimeSpan? Interval { get; set; }
     public int BaseInterval { get; set; }
     public TimeSpan? Timeout { get; set; }
-
-    [JsonIgnore]
+#if NET8_0_OR_GREATER
+    [System.Text.Json.Serialization.JsonIgnore]
+#else
+    [Newtonsoft.Json.JsonIgnore]
+#endif
     public IRetryWaitStrategy? Strategy { get; set; }
     public Dictionary<string, object?>? CustomRetryStrategy { get; set; }
-    [JsonIgnore]
+#if NET8_0_OR_GREATER
+    [System.Text.Json.Serialization.JsonIgnore]
+#else
+    [Newtonsoft.Json.JsonIgnore]
+#endif
     public bool ShouldStroage { get; set; }
 
     public IScheduleStrategy Build()

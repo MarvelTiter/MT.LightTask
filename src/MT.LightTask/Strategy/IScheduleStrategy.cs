@@ -1,6 +1,7 @@
 ﻿using MT.LightTask.Storage;
 using MT.LightTask.Strategy;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MT.LightTask;
 
@@ -54,7 +55,7 @@ public interface IScheduleStrategy
     /// 依此类推
     /// </summary>
     int RetryIntervalBase { get; set; }
-    IRetryWaitStrategy RetryWaitStrategy { get; set; }
+    [NotNull] IRetryWaitStrategy? RetryWaitStrategy { get; set; }
 
     [Obsolete("使用IRetryWaitStrategy")]
     Func<int, TimeSpan>? WaitDurationProvider { get; set; }

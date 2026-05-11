@@ -383,7 +383,11 @@ public partial class CronExpression
         }
 
         store = new CronPartial(type);
+#if NET8_0_OR_GREATER
         var parts = field.Split(',', StringSplitOptions.RemoveEmptyEntries);
+#else
+        var parts = field.Split([','], StringSplitOptions.RemoveEmptyEntries);
+#endif
         foreach (var p in parts)
         {
             ParseFieldPart(ref store, p, type, min, max);
@@ -420,7 +424,11 @@ public partial class CronExpression
             {
                 if (v.Length > 1)
                 {
+#if NET8_0_OR_GREATER
                     throw new FormatException($"'?' 后存在其他字符{v}");
+#else
+                    throw new FormatException($"'?' 后存在其他字符{v.ToString()}");
+#endif
                 }
 
                 if (type != POS_DOM && type != POS_DOW)
@@ -517,7 +525,11 @@ public partial class CronExpression
     private static int HandleStringMap(Span<char> value, int type, ref int index)
     {
         int valueType = value.ContentType();
+#if NET8_0_OR_GREATER
         var str = new string(value);
+#else
+        var str = value.ToString();
+#endif
         if (valueType == 1)
         {
             if (type == POS_DOM)

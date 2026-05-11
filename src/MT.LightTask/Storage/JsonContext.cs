@@ -1,27 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-
+﻿#if NET8_0_OR_GREATER
 namespace MT.LightTask.Storage;
 
-[JsonSerializable(typeof(TaskConfig))]
-[JsonSerializable(typeof(StrategyBuilder))]
-[JsonSourceGenerationOptions(
+[System.Text.Json.Serialization.JsonSerializable(typeof(TaskConfig))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(StrategyBuilder))]
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(
     WriteIndented = true,
     UseStringEnumConverter = true,
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
 )]
-[JsonSerializable(typeof(DateTimeOffset))]
-[JsonSerializable(typeof(DateTime))]
-[JsonSerializable(typeof(TimeSpan))]
-[JsonSerializable(typeof(int))]
-[JsonSerializable(typeof(TaskStatus))]
-[JsonSerializable(typeof(TaskScheduleStatus))]
-[JsonSerializable(typeof(Dictionary<string, object>))]
-internal partial class JsonContext : JsonSerializerContext
+[System.Text.Json.Serialization.JsonSerializable(typeof(DateTimeOffset))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(DateTime))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(TimeSpan))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(int))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(TaskStatus))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(TaskScheduleStatus))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(Dictionary<string, object>))]
+internal partial class JsonContext : System.Text.Json.Serialization.JsonSerializerContext
 {
 }
+#endif
